@@ -116,9 +116,9 @@ Scripting Games
 Useful links
 -------
 
-[ScriptingGames.org](http://ScriptingGames.org)
-[PowerShell.org - Scripting Games Posts](http://powershell.org/wp/category/announcements/scripting-games/)
-[PowerShell.org - Great Debate](http://powershell.org/wp/category/great-debates/)
-[PowerShell.org - Free Ebooks](http://powershell.org/wp/newsletter/)
-[PowerShell.com - Ebooks](http://powershell.com/cs/media/28/default.aspx)
-[GitHub Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet)
+* [ScriptingGames.org](http://ScriptingGames.org)
+* [PowerShell.org - Scripting Games Posts](http://powershell.org/wp/category/announcements/scripting-games/)
+* [PowerShell.org - Great Debate](http://powershell.org/wp/category/great-debates/)
+* [PowerShell.org - Free Ebooks](http://powershell.org/wp/newsletter/)
+* [PowerShell.com - Ebooks](http://powershell.com/cs/media/28/default.aspx)
+* [GitHub Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet)
