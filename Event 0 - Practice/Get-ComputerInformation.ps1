@@ -1,14 +1,17 @@
 ﻿<#
 # TO DO
 -Should OS and SP being imported from the list of IP ?
-
-
+-What if multiple diskdrive
+-Should i get the OS and SP info
+-LastReboot information : is the property LastBootUpTime good enough ?
+-order the final $info
 #>
+
 
 function Get-ComputerInformation {
 <#
 	.SYNOPSIS
-		Get-ComputerInformation retrieve information such as Last  
+		Get-ComputerInformation
 
 	.DESCRIPTION
 		A detailed description of the Get-Something function.
@@ -79,15 +82,18 @@ function Get-ComputerInformation {
 		[System.Management.Automation.Credential()]
 		$Credential = [System.Management.Automation.PSCredential]::Empty,
 	
-		[Parameter()]
+		[Alias("Path")]
+		[ValidateScript({Test-Path -path $_})]
 		[String]$SaveTo,
 	
-		[Parameter()]
+		[Parameter(Mandatory)]
+		[ValidateSet("WSMAN","DCOM")]
 		[String]$Protocol = 'WSMAN'
 	)
 	
 	BEGIN {
 		TRY {
+			IF(-not(Get-Module -Name CimCmdlets -ErrorAction Stop | Out-Null){Import-Module -Name CimCmdlets}
 		}#TRY
 		CATCH {
 		}#CATCH Block
@@ -135,16 +141,55 @@ function Get-ComputerInformation {
 				}#Switch ($Protocol)
 				
 				# Data
+				
+				$Info = @{
+					ComputerName = $Computer
+				}#$Info
+				
 				IF ($PSBoundParameters['HardwareInformation']) {
+					# Get the information from Win32_ComputerSystem
+					$ComputerSystem = Get-CimInstance -CimSession $CimSession -ClassName win32_ComputerSystem -Property Manufacturer,Model,TotalPhysicalMemory,NumberOfProcessors
+					
+					# Get the information from Win32_diskdrive
+					$DiskDrive = Get-CimInstance -CimSession $CimSession -ClassName win32_diskdrive -Property Size
+					
+					# Send the Info to the array
+					$Info.Manufacturer = $ComputerSystem.Manufacturer
+					$Info.Model = $ComputerSystem.Model
+					$Info.MemoryGB = $ComputerSystem.TotalPhysicalMemory/1GB
+					$Info.NumberOfProcessors = $ComputerName.NumberOfProcessors
+					$Info.DiskSize = $DiskDrive.Size/1GB
 					
 					}
+				
 				IF ($PSBoundParameters['LastPatchInstalled']) {
 					
-					}
-				IF ($PSBoundParameters['LastReboot']) {
+					# Get the information from win32_quickfixengineering
+					$LastPatchesInstalled = get-ciminstance -CimSession $CimSession -ClassName win32_quickfixengineering -Property Installedon
 					
+					# Send the information to the array
+					$Info.LastPatchInstalled = ($LastPatchesInstalled | Sort-Object -Property InstalledOn -Descending | Select-Object -first 1).HotFixID
+					}
+				
+				IF ($PSBoundParameters['LastReboot']) {
+					# Get the information from Win32_OperatingSystem
+					$LastReboot = get-ciminstance -CimSession $CimSession -ClassName win32_operatingsystem -Property LastBootUpTime
+					
+					# Send the information to the array
+					$Info.LastReboot = $LastReboot.LastBootUpTime
 				}
 				
+				IF ($PSBoundParameters['ApplicationInstalled']) {
+					# Get the information from Win32_OperatingSystem
+					$Services = get-ciminstance -CimSession $CimSession -ClassName win32_service -Property Name,State,Status
+					
+					# Send the information to the array
+					$Info.SQLInstalled = 
+				}
+				
+				IF ($PSBoundParameters['WindowsComponents']) {
+					
+				}
 				
 			}#TRY Block
 			CATCH {
@@ -156,8 +201,6 @@ function Get-ComputerInformation {
 			IF ($RunningNicely){
 				$Info = [ordered]@{
 					ComputerName = $Computer
-					
-					
 				}#$Info
 				
 			}#IF ($RunningNicely)
