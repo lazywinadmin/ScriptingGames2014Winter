@@ -5,6 +5,7 @@
 -Should i get the OS and SP info
 -LastReboot information : is the property LastBootUpTime good enough ?
 -order the final $info
+-Validate Parameter
 #>
 
 
