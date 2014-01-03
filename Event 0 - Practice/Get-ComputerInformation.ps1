@@ -1,4 +1,11 @@
-﻿function Get-ComputerInformation {
+﻿<#
+# TO DO
+-Should OS and SP being imported from the list of IP ?
+
+
+#>
+
+function Get-ComputerInformation {
 <#
 	.SYNOPSIS
 		Get-ComputerInformation retrieve information such as Last  
@@ -70,7 +77,13 @@
 	
 		[Alias("RunAs")]
 		[System.Management.Automation.Credential()]
-		$Credential = [System.Management.Automation.PSCredential]::Empty
+		$Credential = [System.Management.Automation.PSCredential]::Empty,
+	
+		[Parameter()]
+		[String]$SaveTo,
+	
+		[Parameter()]
+		[String]$Protocol = 'WSMAN'
 	)
 	
 	BEGIN {
@@ -81,10 +94,75 @@
 	}#BEGIN Block
 	
 	PROCESS {
-		TRY {
-		}#TRY Block
-		CATCH {
-		}#CATCH Block
+		FOREACH ($Computer in $ComputerName){
+			# Define Splatting
+			$CIMSessionParams = @{
+				ComputerName 	= $Computer
+				ErrorAction 	= 'Stop'
+				ErrorVariable	= 'ProcessErrorCIM'
+				}
+			
+			TRY {
+				$RunningNicely = $true
+				
+				# Connectivity Test
+                Write-Verbose -Message "$Computer - Testing Connection..."
+                Test-Connection -ComputerName $Computer -count 1 -Quiet -ErrorAction Stop | Out-Null
+				
+				# Credential
+				IF ($PSBoundParameters['Credential']) {$CIMSessionParams.credential = $Credential}
+				
+				# Protocol
+				Switch ($Protocol) {
+					'DCOM' {
+						# Trying with DCOM protocol
+                		Write-Verbose -Message "$Computer - Trying to connect via DCOM protocol"
+                		$CIMSessionParams.SessionOption = New-CimSessionOption -Protocol Dcom
+                		$CimSession = New-CimSession @CIMSessionParams
+                		$CimProtocol = $CimSession.protocol
+                		Write-Verbose -message "$Computer - [$CimProtocol] CIM SESSION - Opened"
+					}# 'DCOM'
+					'WSMAN' {
+						# Trying with WsMan protocol
+						Write-Verbose -Message "$Computer - Trying to connect via WSMAN protocol"
+						IF ((Test-WSMan -ComputerName $Computer -ErrorAction SilentlyContinue).productversion -match 'Stack: 3.0'){
+							Write-Verbose -Message "$Computer - WSMAN is responsive"
+                			$CimSession = New-CimSession @CIMSessionParams
+                			$CimProtocol = $CimSession.protocol
+                			Write-Verbose -message "$Computer - [$CimProtocol] CIM SESSION - Opened"
+						}#IF
+					}# 'WSMAN'
+				}#Switch ($Protocol)
+				
+				# Data
+				IF ($PSBoundParameters['HardwareInformation']) {
+					
+					}
+				IF ($PSBoundParameters['LastPatchInstalled']) {
+					
+					}
+				IF ($PSBoundParameters['LastReboot']) {
+					
+				}
+				
+				
+			}#TRY Block
+			CATCH {
+				$RunningNicely = $false
+				IF ($ProcessErrorCIM){Write-Warning -Message "$Computer - Can't Connect - $protocol"}
+				
+			}#CATCH Block
+			
+			IF ($RunningNicely){
+				$Info = [ordered]@{
+					ComputerName = $Computer
+					
+					
+				}#$Info
+				
+			}#IF ($RunningNicely)
+			
+		}#FOREACH Block
 	}#PROCESS Block
 	
 	END {
