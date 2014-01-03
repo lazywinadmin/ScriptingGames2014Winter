@@ -122,3 +122,4 @@ Useful links
 * [PowerShell.org - Free Ebooks](http://powershell.org/wp/newsletter/)
 * [PowerShell.com - Ebooks](http://powershell.com/cs/media/28/default.aspx)
 * [GitHub Markdown Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet)
+* [GitImmersion.com](http://gitimmersion.com)
