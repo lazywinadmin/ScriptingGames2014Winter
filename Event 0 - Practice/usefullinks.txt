@@ -1,0 +1,8 @@
+
+Found below link
+
+C# way to calculate the number of valid IP Addressess from the IP And mask
+http://stackoverflow.com/questions/1470792/how-to-calculate-the-ip-range-when-the-ip-address-and-the-netmask-is-given
+
+Technet Script for Subnet Scan:
+http://gallery.technet.microsoft.com/scriptcenter/SubNet-Scan-dad0311f
