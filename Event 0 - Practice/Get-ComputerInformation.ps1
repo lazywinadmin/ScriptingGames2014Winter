@@ -6,24 +6,46 @@
 -LastReboot information : is the property LastBootUpTime good enough ?
 -order the final $info
 -Validate Parameter
-
+-Files: Validate Naming Convention accepted by Windows ([A-Z]|[a-z]|[0-9]|_|-|\.|\s)+
 -Some change
+-if WSMAN fail, fall back on DCOM
+-LogPath parameter ?
+
 #>
 
 
 function Get-ComputerInformation {
 <#
 	.SYNOPSIS
-		Get-ComputerInformation
+		Get-ComputerInformation function retrieve inventory information from one or multiple computers.
 
 	.DESCRIPTION
-		A detailed description of the Get-Something function.
+		Get-ComputerInformation function retrieve inventory information from one or multiple computers.
 
-	.PARAMETER  ParameterA
-		The description of a the ParameterA parameter.
+	.PARAMETER  ComputerName
+		Specifies Defines the ComputerName
 
-	.PARAMETER  ParameterB
-		The description of a the ParameterB parameter.
+	.PARAMETER  Path
+		Specifies different credential to use
+	
+	.PARAMETER  Protocol
+		Specifies the protocol to use to establish the connection with the remote computer(s)
+		Default: WSMAN
+	
+	.PARAMETER  HardwareInformation
+		Specifies different credential to use
+	
+	.PARAMETER  LastPatchInstalled
+		Specifies different credential to use
+	
+	.PARAMETER  LastReboot
+		Specifies different credential to use
+	
+	.PARAMETER  ApplicationInstalled
+		Specifies different credential to use
+	
+	.PARAMETER  WindowsComponents
+		Specifies different credential to use
 
 	.EXAMPLE
 		PS C:\> Get-Something -ParameterA 'One value' -ParameterB 32
@@ -42,61 +64,56 @@ function Get-ComputerInformation {
 		System.String
 
 	.NOTES
-		For more information about advanced functions, call Get-Help with any
-		of the topics in the links listed below.
-
-	.LINK
-		about_modules
-
-	.LINK
-		about_functions_advanced
-
-	.LINK
-		about_comment_based_help
-
-	.LINK
-		about_functions_advanced_parameters
-
-	.LINK
-		about_functions_advanced_methods
+		Winter Scripting Games 2014
+		Event 0 - Practice Event
+		Title: Server Inventory
+		
+		This function will ...
 #>
 
 	[CmdletBinding()]
 	PARAM(
-		[Parameter(Position=0, Mandatory,ValueFromPipeline,ValueFromPipelineByPropertyName)]
+		[Parameter(
+			Position=0,
+			ValueFromPipeline,
+			ValueFromPipelineByPropertyName,
+			Mandatory,
+			HelpMessage="Specify one or more ComputerName(s) (Netbios name, FQDN, or IP Address)")]
 		[String[]]$ComputerName,
-		
-		[Parameter()]
-		[Switch]$HardwareInformation,
-		
-		[Parameter()]
-		[Switch]$LastPatchInstalled,
-	
-		[Parameter()]
-		[Switch]$LastReboot,
-	
-		[Parameter()]
-		[Switch]$ApplicationInstalled,
-	
-		[Parameter()]
-		[Switch]$WindowsComponents,
 	
 		[Alias("RunAs")]
 		[System.Management.Automation.Credential()]
 		$Credential = [System.Management.Automation.PSCredential]::Empty,
 	
-		[Alias("Path")]
-		[ValidateScript({Test-Path -path $_})]
-		[String]$SaveTo,
+		[Alias("Destination","DestinationPath")]
+		[ValidateScript(
+			# Validate the Path specified by the user
+			{Test-Path -path $_})]
+		[String]$Path,
 	
-		[Parameter(Mandatory)]
+		[Parameter(
+			Mandatory,
+			HelpMessage="Specify the protocol to use")]
 		[ValidateSet("WSMAN","DCOM")]
-		[String]$Protocol = 'WSMAN'
+		[String]$Protocol = 'WSMAN',
+		
+		[Switch]$HardwareInformation,
+		
+		[Switch]$LastPatchInstalled,
+	
+		[Switch]$LastReboot,
+	
+		[Switch]$ApplicationInstalled,
+	
+		[Switch]$WindowsComponents,
 	)
 	
 	BEGIN {
 		TRY {
-			IF(-not(Get-Module -Name CimCmdlets -ErrorAction Stop | Out-Null){Import-Module -Name CimCmdlets}
+			
+			# Verify CimCmdlets is loaded (CIM is loaded by default)
+			#IF(-not(Get-Module -Name CimCmdlets -ErrorAction Stop | Out-Null){Import-Module -Name CimCmdlets}
+			
 		}#TRY
 		CATCH {
 		}#CATCH Block
@@ -104,16 +121,15 @@ function Get-ComputerInformation {
 	
 	PROCESS {
 		FOREACH ($Computer in $ComputerName){
+			
 			# Define Splatting
 			$CIMSessionParams = @{
 				ComputerName 	= $Computer
 				ErrorAction 	= 'Stop'
 				ErrorVariable	= 'ProcessErrorCIM'
-				}
+			}#$CIMSessionParams
 			
 			TRY {
-				$RunningNicely = $true
-				
 				# Connectivity Test
                 Write-Verbose -Message "$Computer - Testing Connection..."
                 Test-Connection -ComputerName $Computer -count 1 -Quiet -ErrorAction Stop | Out-Null
@@ -165,7 +181,8 @@ function Get-ComputerInformation {
 					
 					}
 				
-				IF ($PSBoundParameters['LastPatchInstalled']) {
+				# Switch LastPatchInstalled
+				IF ($LastPatchInstalled) {
 					
 					# Get the information from win32_quickfixengineering
 					$LastPatchesInstalled = get-ciminstance -CimSession $CimSession -ClassName win32_quickfixengineering -Property Installedon
@@ -174,7 +191,8 @@ function Get-ComputerInformation {
 					$Info.LastPatchInstalled = ($LastPatchesInstalled | Sort-Object -Property InstalledOn -Descending | Select-Object -first 1).HotFixID
 					}
 				
-				IF ($PSBoundParameters['LastReboot']) {
+				# Switch LastReboot
+				IF ($LastReboot) {
 					# Get the information from Win32_OperatingSystem
 					$LastReboot = get-ciminstance -CimSession $CimSession -ClassName win32_operatingsystem -Property LastBootUpTime
 					
@@ -182,7 +200,8 @@ function Get-ComputerInformation {
 					$Info.LastReboot = $LastReboot.LastBootUpTime
 				}
 				
-				IF ($PSBoundParameters['ApplicationInstalled']) {
+				# Switch ApplicationInstalled
+				IF ($ApplicationInstalled) {
 					# Get the information from Win32_OperatingSystem
 					$Services = get-ciminstance -CimSession $CimSession -ClassName win32_service -Property Name,State,Status
 					
@@ -190,24 +209,16 @@ function Get-ComputerInformation {
 					$Info.SQLInstalled = 
 				}
 				
-				IF ($PSBoundParameters['WindowsComponents']) {
+				# Switch WindowsComponents
+				IF ($WindowsComponents) {
 					
 				}
 				
 			}#TRY Block
 			CATCH {
-				$RunningNicely = $false
 				IF ($ProcessErrorCIM){Write-Warning -Message "$Computer - Can't Connect - $protocol"}
 				
 			}#CATCH Block
-			
-			IF ($RunningNicely){
-				$Info = [ordered]@{
-					ComputerName = $Computer
-				}#$Info
-				
-			}#IF ($RunningNicely)
-			
 		}#FOREACH Block
 	}#PROCESS Block
 	
