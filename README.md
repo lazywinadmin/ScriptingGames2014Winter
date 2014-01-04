@@ -1,3 +1,5 @@
+[logo]: http://1.bp.blogspot.com/-iOP4sHKg5ck/UYAgU1M_p2I/AAAAAAABYZA/NW3kgH2fb0Q/s1600/PowerShell-Scripting-Games-Logo.png "Winter Scripting Games 2014"
+
 Winter Scripting Games 2014
 ========================
 
@@ -13,12 +15,12 @@ Team
 
 ### Team members
 
-* Francois-Xavier Cat (Canada GMT -5:00) [@LazyWinAdm](https://twitter.com/LazyWinAdm) - [Blog](http://lazywinadmin.com)
-* Stephane Van Gulick (Switzerland GMT+1:00) [@Stephanevg](https://twitter.com/Stephanevg) - [Blog](http://powershelldistrict.com)
-* Deepak Dhami (India GMT+5:30) [@DexterPOSH](https://twitter.com/DexterPOSH) - [Blog](http://dexterposh.blogspot.ca/)
-* Allister Philippe (France GMT+1:00)
-* Benjamin Rouleau (France GMT+1:00)
-* Guido Oliviera (Brazil GMT -2:00) [@_Guido_Oliveira](https://twitter.com/_Guido_Oliveira) - [Blog](http://guidooliveira.com/)
+* **Francois-Xavier Cat** (Canada GMT -5:00) [@LazyWinAdm](https://twitter.com/LazyWinAdm) - [Blog](http://lazywinadmin.com)
+* **Stephane Van Gulick** (Switzerland GMT+1:00) [@Stephanevg](https://twitter.com/Stephanevg) - [Blog](http://powershelldistrict.com)
+* **Deepak Dhami** (India GMT+5:30) [@DexterPOSH](https://twitter.com/DexterPOSH) - [Blog](http://dexterposh.blogspot.ca/)
+* **Allister Philippe** (France GMT+1:00)
+* **Benjamin Rouleau** (France GMT+1:00)
+* **Guido Oliviera** (Brazil GMT -2:00) [@_Guido_Oliveira](https://twitter.com/_Guido_Oliveira) - [Blog](http://guidooliveira.com/)
 
 
 ### Working Together
