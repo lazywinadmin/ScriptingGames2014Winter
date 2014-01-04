@@ -10,7 +10,7 @@
 -Some change
 -if WSMAN fail, fall back on DCOM
 -LogPath parameter ?
-
+-Save in CSV format, one file per computer COMPUTERNAME_Inventory_YYYYMMDD-HHMMSS.csv
 #>
 
 
@@ -105,19 +105,18 @@ function Get-ComputerInformation {
 	
 		[Switch]$ApplicationInstalled,
 	
-		[Switch]$WindowsComponents,
+		[Switch]$WindowsComponents
 	)
 	
 	BEGIN {
 		TRY {
-			
 			# Verify CimCmdlets is loaded (CIM is loaded by default)
 			#IF(-not(Get-Module -Name CimCmdlets -ErrorAction Stop | Out-Null){Import-Module -Name CimCmdlets}
-			
 		}#TRY
 		CATCH {
 		}#CATCH Block
 	}#BEGIN Block
+	
 	
 	PROCESS {
 		FOREACH ($Computer in $ComputerName){
@@ -129,35 +128,35 @@ function Get-ComputerInformation {
 				ErrorVariable	= 'ProcessErrorCIM'
 			}#$CIMSessionParams
 			
+			
 			TRY {
+				
 				# Connectivity Test
                 Write-Verbose -Message "$Computer - Testing Connection..."
-                Test-Connection -ComputerName $Computer -count 1 -Quiet -ErrorAction Stop | Out-Null
+                Test-Connection -ComputerName $Computer -count 1 -Quiet -ErrorAction Stop -ErrorVariable ProcessErrorTestConnection | Out-Null
 				
 				# Credential
 				IF ($PSBoundParameters['Credential']) {$CIMSessionParams.credential = $Credential}
 				
 				# Protocol
-				Switch ($Protocol) {
-					'DCOM' {
-						# Trying with DCOM protocol
-                		Write-Verbose -Message "$Computer - Trying to connect via DCOM protocol"
-                		$CIMSessionParams.SessionOption = New-CimSessionOption -Protocol Dcom
-                		$CimSession = New-CimSession @CIMSessionParams
-                		$CimProtocol = $CimSession.protocol
-                		Write-Verbose -message "$Computer - [$CimProtocol] CIM SESSION - Opened"
-					}# 'DCOM'
-					'WSMAN' {
-						# Trying with WsMan protocol
-						Write-Verbose -Message "$Computer - Trying to connect via WSMAN protocol"
-						IF ((Test-WSMan -ComputerName $Computer -ErrorAction SilentlyContinue).productversion -match 'Stack: 3.0'){
-							Write-Verbose -Message "$Computer - WSMAN is responsive"
-                			$CimSession = New-CimSession @CIMSessionParams
-                			$CimProtocol = $CimSession.protocol
-                			Write-Verbose -message "$Computer - [$CimProtocol] CIM SESSION - Opened"
-						}#IF
-					}# 'WSMAN'
-				}#Switch ($Protocol)
+				IF ($PSBoundParameters['Protocol'] = 'DCOM'){
+					# Trying with DCOM protocol
+            		Write-Verbose -Message "$Computer - Trying to connect via DCOM protocol"
+            		$CIMSessionParams.SessionOption = New-CimSessionOption -Protocol Dcom
+            		$CimSession = New-CimSession @CIMSessionParams
+            		$CimProtocol = $CimSession.protocol
+            		Write-Verbose -message "$Computer - [$CimProtocol] CIM SESSION - Opened"
+				}# IF 'DCOM'
+				ELSE{
+					# Trying with WsMan protocol
+					Write-Verbose -Message "$Computer - Trying to connect via WSMAN protocol"
+					IF ((Test-WSMan -ComputerName $Computer -ErrorAction SilentlyContinue).productversion -match 'Stack: 3.0'){
+						Write-Verbose -Message "$Computer - WSMAN is responsive"
+            			$CimSession = New-CimSession @CIMSessionParams
+            			$CimProtocol = $CimSession.protocol
+            			Write-Verbose -message "$Computer - [$CimProtocol] CIM SESSION - Opened"
+					}#IF
+				}# ELSE 'WSMAN'
 				
 				# Data
 				
@@ -216,11 +215,14 @@ function Get-ComputerInformation {
 				
 			}#TRY Block
 			CATCH {
+				IF ($ProcessErrorTestConnection){Write-Warning -Message "$Computer - Can't Reach"}
 				IF ($ProcessErrorCIM){Write-Warning -Message "$Computer - Can't Connect - $protocol"}
 				
 			}#CATCH Block
 		}#FOREACH Block
 	}#PROCESS Block
+	
+	
 	
 	END {
 		TRY {
