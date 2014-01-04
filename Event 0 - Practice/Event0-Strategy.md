@@ -75,15 +75,20 @@ As is often the case in Windows PowerShell, there will be many ways to complete 
   * Are the most straightforward and easy to read and understand
 
 
+### Analyze
 
+We decided to split the work in three parts
+-Scanning IP
+-Gathering Information
+-Reporting Information
 
 
 ### Workflow
 
-note: these following parts are not the actual function names, just for representation purposes.
+Note: these following parts are not the actual function names, just for representation purposes.
 
-##### SCAN-SUBNET
-Assignees: Deepak and Allister
+#### SCAN-SUBNET
+**Assignees**: Deepak and Allister
 
 **Using Get-Inventory, It should returns**:
 * Objects and send it to the next cmdlets
@@ -93,8 +98,8 @@ Assignees: Deepak and Allister
 * A csv file (Format example: 10.0.0.0_24-20140104_153905.csv)
 
 
-##### GATHER-INFORMATION
-Assignees: Francois-Xavier and Guido
+#### GATHER-INFORMATION
+**Assignees**: Francois-Xavier and Guido
 
 **Using Get-Inventory, It should returns**:
 * Objects and send it to the next cmdlets
@@ -104,8 +109,8 @@ Assignees: Francois-Xavier and Guido
 * A csv file (Format example: Inventory-SERVER01-20140104_153905.csv)
 
 
-##### REPORT-INFORMATION
-Assignees: Stephane and Benjamin
+#### REPORT-INFORMATION
+**Assignees**: Stephane and Benjamin
 
 **Using Get-Inventory, It should returns**:
 * A csv file (Format example: Report-SERVER01-20140104_153905.csv)
@@ -114,6 +119,7 @@ Assignees: Stephane and Benjamin
 * A csv file (Format example: Report-SERVER01-20140104_153905.csv)
 
 ##### FINAL SCRIPT
+
 We will deliver only one PS1 file to the judge
 This file will contains the following part:
 -Scan-Subnet
