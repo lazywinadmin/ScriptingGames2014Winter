@@ -1,0 +1,10 @@
+Function Get-FileFromInternet {
+    [cmdletbinding()]
+    Param(
+        [Parameter(Mandatory=$true,position=0)]$url,
+        [Parameter(Mandatory=$true,position=1)]$destination
+    )
+            $netWebclient = New-object System.Net.WebClient
+            $NetWebClient.DownloadFileAsync($url,$destination)
+
+}
