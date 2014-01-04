@@ -1,11 +1,9 @@
 ![alt text](https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSwr7yx4w1aaa5wDhPJ8PvJS3uqfkZC__ODU3a32ZscsvQy8qeo "Winter Scripting Games 2014")
-
-Winter Scripting Games 2014
+POSH Monks Team
 ========================
 
-**TEAM: POSH Monks**
 
-We are a team of six people participating to the Winter Scripting Games 2014 (PowerShell Script language).
+We are a team of six people participating to the **Winter Scripting Games 2014** (PowerShell Script language).
 This repository is holding our team work accomplished during each events.
 
 
