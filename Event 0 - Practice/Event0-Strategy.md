@@ -87,6 +87,8 @@ We decided to split the work in three parts
 
 Note: these following parts are not the actual function names, just for representation purposes.
 
+
+
 #### SCAN-SUBNET
 **Assignees**: Deepak and Allister
 
@@ -98,6 +100,8 @@ Note: these following parts are not the actual function names, just for represen
 * A csv file (Format example: 10.0.0.0_24-20140104_153905.csv)
 
 
+
+
 #### GATHER-INFORMATION
 **Assignees**: Francois-Xavier and Guido
 
@@ -107,6 +111,8 @@ Note: these following parts are not the actual function names, just for represen
  
 **Using just the function Gather-Information, It should returns**:
 * A csv file (Format example: Inventory-SERVER01-20140104_153905.csv)
+
+
 
 
 #### REPORT-INFORMATION
