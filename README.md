@@ -1,4 +1,4 @@
-[logo]: http://1.bp.blogspot.com/-iOP4sHKg5ck/UYAgU1M_p2I/AAAAAAABYZA/NW3kgH2fb0Q/s1600/PowerShell-Scripting-Games-Logo.png "Winter Scripting Games 2014"
+![alt text](https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSwr7yx4w1aaa5wDhPJ8PvJS3uqfkZC__ODU3a32ZscsvQy8qeo "Winter Scripting Games 2014")
 
 Winter Scripting Games 2014
 ========================
