@@ -18,7 +18,7 @@ Team
 * **Deepak Dhami** (India GMT+5:30) [@DexterPOSH](https://twitter.com/DexterPOSH) - [Blog](http://dexterposh.blogspot.ca/)
 * **Allister Philippe** (France GMT+1:00)
 * **Benjamin Rouleau** (France GMT+1:00)
-* **Guido Oliviera** (Brazil GMT -2:00) [@_Guido_Oliveira](https://twitter.com/_Guido_Oliveira) - [Blog](http://guidooliveira.com/)
+* **Guido Oliviera** (Brazil GMT -3:00) [@_Guido_Oliveira](https://twitter.com/_Guido_Oliveira) - [Blog](http://guidooliveira.com/)
 
 
 ### Working Together
@@ -91,7 +91,7 @@ From the ebook "PowerShell.org Pratices" (nov 2013)
   * Document why you did not use PowerShell
   * Wrap other tools in an advanced function of cmdlet
 * Pipelines vs Constructs
-  * Avoir using pipelines in scripts
+  * Avoid using pipelines in scripts
 * Trapping and Capturing Errors
   * Use -ErrorAction Stop when calling cmdlets
   * Use $ErrorActionPreference='Stop'/'Continue' when calling cmdlets
