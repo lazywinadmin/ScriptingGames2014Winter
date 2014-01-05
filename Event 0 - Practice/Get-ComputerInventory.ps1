@@ -14,7 +14,7 @@
 #>
 
 
-function Get-ComputerInformation {
+function Get-ComputerInventory {
 <#
 	.SYNOPSIS
 		Get-ComputerInformation function retrieve inventory information from one or multiple computers.
@@ -48,7 +48,7 @@ function Get-ComputerInformation {
 		Specifies different credential to use
 
 	.EXAMPLE
-		PS C:\> Get-Something -ParameterA 'One value' -ParameterB 32
+		PS C:\> Get-Computer -ParameterA 'One value' -ParameterB 32
 		'This is the output'
 		This example shows how to call the Get-Something function with named parameters.
 
@@ -67,12 +67,14 @@ function Get-ComputerInformation {
 		Winter Scripting Games 2014
 		Event 0 - Practice Event
 		Title: Server Inventory
+		Team: POSH Monks
 		
 		This function will ...
 #>
 
 	[CmdletBinding()]
 	PARAM(
+		[Alias("MachineName","__SERVER")]
 		[Parameter(
 			Position=0,
 			ValueFromPipeline,
@@ -89,7 +91,7 @@ function Get-ComputerInformation {
 		[ValidateScript(
 			# Validate the Path specified by the user
 			{Test-Path -path $_})]
-		[String]$Path,
+		[String]$OutputPath,
 	
 		[Parameter(
 			Mandatory,
