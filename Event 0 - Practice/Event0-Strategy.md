@@ -73,3 +73,64 @@ As is often the case in Windows PowerShell, there will be many ways to complete 
   * Perform well under the load specified
   * Leverage built-in functionality of Windows PowerShell rather than reinventing the wheel
   * Are the most straightforward and easy to read and understand
+
+
+### Analyze
+
+We decided to split the work in three parts
+-Scanning IP
+-Gathering Information
+-Reporting Information
+
+
+### Workflow
+
+Note: these following parts are not the actual function names, just for representation purposes.
+
+
+
+#### SCAN-SUBNET
+**Assignees**: Deepak and Allister
+
+**Using Get-Inventory, It should returns**:
+* Objects and send it to the next cmdlets
+* A csv file (Format example: 10.0.0.0_24-20140104_153905.csv)
+ 
+**Using just the function Scan-Subnet, It should returns**:
+* A csv file (Format example: 10.0.0.0_24-20140104_153905.csv)
+
+
+
+
+#### GATHER-INFORMATION
+**Assignees**: Francois-Xavier and Guido
+
+**Using Get-Inventory, It should returns**:
+* Objects and send it to the next cmdlets
+* A csv file (Format example: Inventory-SERVER01-20140104_153905.csv)
+ 
+**Using just the function Gather-Information, It should returns**:
+* A csv file (Format example: Inventory-SERVER01-20140104_153905.csv)
+
+
+
+
+#### REPORT-INFORMATION
+**Assignees**: Stephane and Benjamin
+
+**Using Get-Inventory, It should returns**:
+* A csv file (Format example: Report-SERVER01-20140104_153905.csv)
+ 
+**Using just the function Gather-Information, It should returns**:
+* A csv file (Format example: Report-SERVER01-20140104_153905.csv)
+
+##### FINAL SCRIPT
+
+We will deliver only one PS1 file to the judge
+This file will contains the following part:
+-Scan-Subnet
+-Gather-Information
+-Report-Information
+-Get-Inventory: Final part that call all the functions (Scan | Gather | Report)
+
+
