@@ -54,7 +54,6 @@ Scripting Games
 ### PowerShell Best Practices
 From the ebook "PowerShell.org Pratices" (nov 2013)
 
-* Error handling
 * Comment based help
   * Describe each parameter
   * Provide usage examples
