@@ -1,4 +1,4 @@
-﻿<#
+<#
 # TO DO
 -Should OS and SP being imported from the list of IP ?
 -What if multiple diskdrive
@@ -96,7 +96,7 @@ function Get-ComputerInformation {
 	
 	BEGIN {
 		TRY {
-			IF(-not(Get-Module -Name CimCmdlets -ErrorAction Stop | Out-Null){Import-Module -Name CimCmdlets}
+			IF(-not(Get-Module -Name CimCmdlets -ErrorAction Stop | Out-Null)){Import-Module -Name CimCmdlets}
 		}#TRY
 		CATCH {
 		}#CATCH Block
@@ -168,7 +168,7 @@ function Get-ComputerInformation {
 				IF ($PSBoundParameters['LastPatchInstalled']) {
 					
 					# Get the information from win32_quickfixengineering
-					$LastPatchesInstalled = get-ciminstance -CimSession $CimSession -ClassName win32_quickfixengineering -Property Installedon
+					$LastPatchesInstalled = Get-CimInstance -CimSession $CimSession -ClassName Win32_QuickFixEngineering -Property InstalledOn
 					
 					# Send the information to the array
 					$Info.LastPatchInstalled = ($LastPatchesInstalled | Sort-Object -Property InstalledOn -Descending | Select-Object -first 1).HotFixID
@@ -176,7 +176,7 @@ function Get-ComputerInformation {
 				
 				IF ($PSBoundParameters['LastReboot']) {
 					# Get the information from Win32_OperatingSystem
-					$LastReboot = get-ciminstance -CimSession $CimSession -ClassName win32_operatingsystem -Property LastBootUpTime
+					$LastReboot = Get-CimInstance -CimSession $CimSession -ClassName Win32_OperatingSystem -Property LastBootUpTime
 					
 					# Send the information to the array
 					$Info.LastReboot = $LastReboot.LastBootUpTime
@@ -184,10 +184,13 @@ function Get-ComputerInformation {
 				
 				IF ($PSBoundParameters['ApplicationInstalled']) {
 					# Get the information from Win32_OperatingSystem
-					$Services = get-ciminstance -CimSession $CimSession -ClassName win32_service -Property Name,State,Status
+					$Services = Get-CimInstance -CimSession $CimSession -ClassName Win32_Service -Property Name,State,Status
 					
 					# Send the information to the array
-					$Info.SQLInstalled = 
+					$Info.SQLInstalled = if($Service.name -like "MSSQL*"){$true} else{$false}
+					$Info.SharepointInstalled = if($Service.name -like "SPAdmin*"){$true} else{$false}
+					$Info.ExchangeInstalled = if($Service.name -like "MSExchangeRPC"){$true} else{$false}
+					$Info.IISInstalled = if($Service.name -like "IISAdmin"){$true} else{$false}
 				}
 				
 				IF ($PSBoundParameters['WindowsComponents']) {
@@ -226,4 +229,3 @@ function Get-ComputerInformation {
 # Optional commands to create a public alias for the function
 #New-Alias -Name gs -Value Get-Something
 #Export-ModuleMember -Alias gs
-
