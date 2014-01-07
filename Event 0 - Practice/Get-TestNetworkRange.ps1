@@ -222,6 +222,7 @@ Workflow Get-OSInfo
 {
     Param
     (
+        [Parameter(Mandatory)]
         [ipaddress[]]$Ip
     )
     Function Resolve-IPAddress
@@ -266,8 +267,16 @@ Workflow Get-OSInfo
                     }
                     if ($EverythingFine)
                     {
-                        $hash = @{"IPAddress"=$i; "ComputerName"=$OSInfo.CSName;"OS"=$OSInfo.Caption;"ServicePack"=$OSInfo.CSDversion}
-                        $object = New-Object -TypeName PSobject -Property @hash
+                        $hash = @{"IPAddress"=$using:i;"ComputerName"=$OSInfo.CSName;"OS"=$OSInfo.Caption;"ServicePack"=$OSInfo.CSDversion;Online=$true}
+                        $object = New-Object -TypeName PSObject -Property $hash
+                        Write-Output $object
+                    }
+                    else
+                    {
+                        #Machine has probably WMI Issue 
+                        $hash = @{"IPAddress"=$using:i;"ComputerName"=$(([system.net.dns]::GetHostEntry("$using:i")).HostName);"OS"=$Null;"ServicePack"=$Null;Online=$true}
+                        $object = New-Object -TypeName PSObject -Property $hash
+                        
                         Write-Output $object
                     }
                 }
@@ -275,10 +284,24 @@ Workflow Get-OSInfo
             }
             else
             {
-                #machine resolving but not online
-
+                InlineScript
+                {#machine resolving but not online need to record this too
+                    $hash = @{"IPAddress"=$using:i;"ComputerName"=$(([system.net.dns]::GetHostEntry("$using:i")).HostName);"OS"=$null;"ServicePack"=$null;Online=$false}
+                    $object = New-Object -TypeName PSObject -Property $hash
+                    Write-Output $object
+                }
             }
 
+        }
+        else
+        {
+            InlineScript
+            {
+                #IP Address not being used
+                $hash = @{"IPAddress"=$using:i;"ComputerName"=$null;"OS"=$null;"ServicePack"=$null;Online=$false}
+                $object = New-Object -TypeName PSObject -Property $hash
+                Write-Output $object
+            }
         }
     }
 

@@ -6,3 +6,12 @@ http://stackoverflow.com/questions/1470792/how-to-calculate-the-ip-range-when-th
 
 Technet Script for Subnet Scan:
 http://gallery.technet.microsoft.com/scriptcenter/SubNet-Scan-dad0311f
+
+
+RunSpaces:
+http://ramblingcookiemonster.wordpress.com/2012/10/19/parallel-powershell/
+http://ramblingcookiemonster.wordpress.com/2012/11/25/parallel-powershell-part-ii/
+
+
+http://learn-powershell.net/2012/05/13/using-background-runspaces-instead-of-psjobs-for-better-performance/
+http://newsqlblog.com/2012/05/22/concurrency-in-powershell-multi-threading-with-runspaces/
