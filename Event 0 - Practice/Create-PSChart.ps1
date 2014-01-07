@@ -3,8 +3,11 @@
 # **********************************************************
 
 <#
- todo: if the machine miss the .NET framework 4 then we prompt the user to download
-	the mschart exe
+ todo: 
+- if the machine miss the .NET framework 4 then we prompt the user to download the mschart exe
+- Input nature? (update input help section)
+- Output nature? (update output help section)
+- switch nature?
 #>
 
 #### Test data - START
@@ -76,10 +79,14 @@ Function Create-PSChart {
 
 	.EXAMPLE
 			PS C:\> Create-PSChart -Computers $computers -Path C:\temp -Roles -OS -Hardware
-			C:\ps\Chart-Roles-2014-01-06.png
-			C:\ps\Chart-CPU-2014-01-06.png
-			C:\ps\Chart-MemoryGB-2014-01-06.png
-			C:\ps\Chart-Manufacturer-2014-01-06.pn
+			Bytes                                                                           Label
+			-----                                                                           -----
+			{137, 80, 78, 71...}                                                            Roles
+			{137, 80, 78, 71...}                                                            CPU
+			{137, 80, 78, 71...}                                                            MemoryGB
+			{137, 80, 78, 71...}                                                            Manufacturer
+			{137, 80, 78, 71...}                                                            Model
+			{137, 80, 78, 71...}                                                            ServicePack
 			...
 			This example shows how to call the Create-PSChart function with named parameters.
 
@@ -87,11 +94,11 @@ Function Create-PSChart {
 			TODO: Determine if object or object[]
 
 	.OUTPUTS
-			System.String[]
+			System.Array
 
 	.NOTES
-			This function rely on the .NET Framework version 4.0 or higher, MS Charts need to be installed
-			for versions which are below 4.0 such as 3.5
+			This function rely on the .NET Framework version 4.0 or higher to generate graphical charts, 
+			MS Charts need to be installed for .NET versions which are below 4.0 such as 3.5
 
 	.LINK
 			MS Charts: http://www.microsoft.com/en-us/download/details.aspx?id=14422
@@ -131,14 +138,18 @@ Function Create-PSChart {
 	BEGIN {
 		#--- Code: TODO: Check for .NET framework here
 		
-		#--- Code: Load the MS Chart assemblies
-		[void][Reflection.Assembly]::LoadWithPartialName("System.Windows.Forms")
+		Write-Verbose -Message "Loading .NET Data Visualization assembly"
+		
 		[void][Reflection.Assembly]::LoadWithPartialName("System.Windows.Forms.DataVisualization")
+		
+		[array]$output = @()
 	}
 	
 	PROCESS {
 		#--- Code: The roles need to be graphed
 		if ($Roles) {
+			Write-Verbose -Message "Generating a chart for the roles"
+			
 			#--- Code: First, we create the chart object
 			$chart = New-object System.Windows.Forms.DataVisualization.Charting.Chart
 			$chart.BackColor = "White"
@@ -190,13 +201,20 @@ Function Create-PSChart {
 			}
 			
 			#--- Code: We save the chart now
-			$today = (Get-Date).ToString("yyyy-MM-dd")
-			$chart.SaveImage("$Path\Chart-Roles-$today.png","png")
-			Write-Output "$Path\Chart-Roles-$today.png"
+			$stream = New-Object System.IO.MemoryStream
+			$chart.SaveImage($stream, "png")
+			
+			$output += New-Object PSObject -Property @{Label = "Roles"; Bytes = $stream.GetBuffer()}
+			
+			#$today = (Get-Date).ToString("yyyy-MM-dd")
+			#$chart.SaveImage("$Path\Chart-Roles-$today.png","png")
+			#Write-Output "$Path\Chart-Roles-$today.png"
 		}
 			
 		#--- Code: Either the Hardware or the OS shall be shown
 		if ($Hardware -or $OS) {
+			Write-Debug -Message "New object properties may be added below to generate additionals charts"
+			
 			#--- Code: Nested array (Object property name, Chart title, X Axis label)
 			if ($Hardware) {
 				$properties = @(
@@ -225,6 +243,8 @@ Function Create-PSChart {
 				Try {
 					#--- Code: Check if the property exists first.
 					If (($Computers | Get-Member | Select -ExpandProperty Name) -Contains $data.PropertyName) {
+						Write-Verbose -Message "Generating a chart for the property '$($data.PropertyName)'"
+						
 						#--- Code: First, we create the chart object
 						$chart = New-object System.Windows.Forms.DataVisualization.Charting.Chart
 						$chart.BackColor = "White"
@@ -266,9 +286,14 @@ Function Create-PSChart {
 						}
 						
 						#--- Code: We save the chart now
-						$today = (Get-Date).ToString("yyyy-MM-dd")
-						$chart.SaveImage("$Path\Chart-$($data.PropertyName)-$today.png","png")
-						Write-Output "$Path\Chart-$($data.PropertyName)-$today.png"
+						$stream = New-Object System.IO.MemoryStream
+						$chart.SaveImage($stream, "png")
+						
+						$output += New-Object PSObject -Property @{Label = $data.PropertyName; Bytes = $stream.GetBuffer()}
+						
+						#$today = (Get-Date).ToString("yyyy-MM-dd")
+						#$chart.SaveImage("$Path\Chart-$($data.PropertyName)-$today.png","png")
+						#Write-Output "$Path\Chart-$($data.PropertyName)-$today.png"
 					} Else {
 						Write-Warning -Message "The property '$($data.PropertyName)' does not exist in the given object"
 					}
@@ -280,10 +305,11 @@ Function Create-PSChart {
 	}
 	
 	END {
-	
+		return $output
 	}
 }
 
 $ScriptExecutionPath = Split-Path $MyInvocation.mycommand.path -Parent
 
+#Create-PSChart -Computers $computers -Path $ScriptExecutionPath -Roles
 Create-PSChart -Computers $computers -Path $ScriptExecutionPath -Roles -OS -Hardware
