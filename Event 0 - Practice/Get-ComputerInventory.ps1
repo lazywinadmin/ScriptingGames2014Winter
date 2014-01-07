@@ -10,8 +10,10 @@
 -Job ? workflow (parallele work)?
 -File format should include ? LR LP HW APP CMPNT
 -win32_product
-
 -localdisk: Where-Object {$_.InterfaceType -like "IDE"}	|
+-Put the full cmdlet name + full parameter
+
+
 #>
 
 
@@ -87,7 +89,7 @@ function Get-ComputerInventory {
 
 	[CmdletBinding()]
 	PARAM(
-		[Alias("__SERVER","PSComputerName","CN","ServerName")]
+		[Alias("__SERVER","CN","ServerName")]
 		[Parameter(
 			Position=0,
 			ValueFromPipeline,
@@ -124,7 +126,7 @@ function Get-ComputerInventory {
 	BEGIN {
 		TRY {
 			# Verify CimCmdlets is loaded (CIM is loaded by default)
-			#IF(-not(Get-Module -Name CimCmdlets -ErrorAction Stop | Out-Null){Import-Module -Name CimCmdlets}
+			#IF(-not(Get-Module -Name CimCmdlets -ErrorAction Stop | Out-Null)){Import-Module -Name CimCmdlets}
 		}#TRY Block
 		CATCH {
 		}#CATCH Block
@@ -226,7 +228,7 @@ function Get-ComputerInventory {
 					Write-Verbose -Message "$Computer - Gather Last Patch Installed"
 					
 					# Get the information from win32_quickfixengineering
-					$LastPatchesInstalled = Get-CimInstance -CimSession $CimSession -ClassName win32_quickfixengineering #-Property Installedon
+					$LastPatchesInstalled = Get-CimInstance -CimSession $CimSession -ClassName Win32_QuickFixEngineering #-Property InstalledOn
 					
 					# Send the Information to the $Inventory object
 					$Inventory.LastPatchInstalled = $LastPatchesInstalled | Sort-Object -Property InstalledOn -Descending | Select-Object -Property HotFixID,Caption,Description -first 1
@@ -238,7 +240,7 @@ function Get-ComputerInventory {
 					Write-Verbose -Message "$Computer - Gather Last Reboot DateTime"
 					
 					# Get the information from Win32_OperatingSystem
-					$OperatingSystem = Get-CimInstance -CimSession $CimSession -ClassName win32_operatingsystem -Property LastBootUpTime
+					$OperatingSystem = Get-CimInstance -CimSession $CimSession -ClassName Win32_OperatingSystem -Property LastBootUpTime
 					# Send the information to the array
 					$Inventory.LastReboot = $OperatingSystem.LastBootUpTime
 				}#IF ($LastReboot)
@@ -249,13 +251,14 @@ function Get-ComputerInventory {
 					Write-Verbose -Message "$Computer - Gather Application Installed"
 					
 					# Get the information from Win32_OperatingSystem
-					$Services = Get-CimInstance -CimSession $CimSession -ClassName win32_service
+					#$Services = Get-CimInstance -CimSession $CimSession -ClassName win32_service
+					$Services = Get-CimInstance -CimSession $CimSession -ClassName Win32_Service #-Property Name,State,Status
 					
 					# Send the Information to the $Inventory object for each application
-					IF ($Services | Where-Object {$_.name -like 'sqlserver*'}){$Inventory.SQLInstalled = $true} # SQL Service Check
-					IF ($Services | Where-Object {$_.name -like 'w3scv*'}){$Inventory.IISInstalled = $true} # IIS Service Check
-					IF ($Services | Where-Object {$_.name -like '*sharepoint*'}){$Inventory.SharepointInstalled = $true}# Sharepoint Service Check
-					IF ($Services | Where-Object {$_.name -like '*msexchange*'}){$Inventory.ExchangeInstalled = $true}# Exchange Service Check
+					$Inventory.SQLInstalled = IF ($Services | Where-Object {$_.name -like 'sqlserver*'}){$true} ELSE {$false} # SQL Service Check
+					$Inventory.IISInstalled = IF ($Services | Where-Object {$_.name -like 'iisadmin*'}){$true} ELSE {$false} # IIS Service Check
+					$Inventory.SharepointInstalled = IF ($Services | Where-Object {$_.name -like '*sharepoint*'}){$true} ELSE {$false}# Sharepoint Service Check
+					$Inventory.ExchangeInstalled = IF ($Services | Where-Object {$_.name -like '*msexchange*'}){$true} ELSE {$false}# Exchange Service Check
 				}#IF ($ApplicationInstalled)
 				
 				
@@ -297,6 +300,7 @@ function Get-ComputerInventory {
 				Write-Verbose "Removing CIM 3.0 Session from $Computer"
                 IF ($CimSession) {Remove-CimSession $CimSession}
 			}#FINALLY Block
+			
 		}#FOREACH Block
 	}#PROCESS Block
 	
