@@ -224,11 +224,60 @@ Workflow Get-OSInfo
     (
         [ipaddress[]]$Ip
     )
+    Function Resolve-IPAddress
+    {
+      [CmdLetBinding()]
+          [OutputType([PSObject])]
+          Param(
+            [Parameter(Mandatory = $True, Position = 0, ValueFromPipeline = $True)]
+            [ipaddress]$IPAddress
+          )
+        #try to resolve the IPAddress to a host name...return true if it resolves otherwise false
+        try 
+        {
+            [System.Net.Dns]::GetHostEntry("$IPAddress") | Out-Null
+            Write-Output $True
+        }
+        catch
+        {
+            Write-Warning "$IPAddress not resolving to a hostname"
+            Write-Output $false
+        }
+
+    }
+
     foreach -parallel ($i in $ip)
     {
-        if (Test-Connection -ComputerName $i -Count 2 -Quiet)
+        if (Resolve-IPAddress -IPAddress $i)
         {
-            Get-WmiObject -Namespace root\cimv2 -Class Win32_OperatingSystem -PSComputerName $i 
+            if (Test-Connection -ComputerName $i -Count 2 -Quiet)
+            {
+                InlineScript
+                {
+                    try
+                    {
+                        $OSInfo = Get-WmiObject -Namespace root\cimv2 -Class Win32_OperatingSystem -ComputerName $using:i -ErrorAction Stop -ErrorVariable OSInfoError
+                        $EverythingFine = $true
+                    }
+                    catch
+                    {
+                        Write-Error "$OSInfoError.Exception"
+                        $EverythingFine = $false
+                    }
+                    if ($EverythingFine)
+                    {
+                        $hash = @{"IPAddress"=$i; "ComputerName"=$OSInfo.CSName;"OS"=$OSInfo.Caption;"ServicePack"=$OSInfo.CSDversion}
+                        $object = New-Object -TypeName PSobject -Property @hash
+                        Write-Output $object
+                    }
+                }
+
+            }
+            else
+            {
+                #machine resolving but not online
+
+            }
 
         }
     }
