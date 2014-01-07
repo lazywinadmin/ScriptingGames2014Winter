@@ -6,8 +6,7 @@
  todo: 
 - if the machine miss the .NET framework 4 then we prompt the user to download the mschart exe
 - Input nature? (update input help section)
-- Output nature? (update output help section)
-- switch nature?
+- switch nature? true/false?
 #>
 
 #### Test data - START
