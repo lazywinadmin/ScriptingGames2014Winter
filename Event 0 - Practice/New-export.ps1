@@ -6,43 +6,6 @@
 # Filename:     
 #========================================================================
 
-function Exportto-PowerPoint {
-	
-	[cmdletbinding()]
-	
-	Param(
-	
-	$Path,
-	$GraphicSource
-	
-	)
-	
-	
-	#Add-type -AssemblyName office
-		$Application = New-Object -ComObject powerpoint.application
-		$application.visible = [Microsoft.Office.Core.MsoTriState]::msoTrue
-		$slideType = "microsoft.office.interop.powerpoint.ppSlideLayout" -as [type]
-		$templatePresentation = "C:\fso\TemplatePresentation.pptx"
-		Import-Csv -Path C:\fso\pptTemplateNames.csv | ForEach-Object { `
-		 $presentation = $application.Presentations.open($templatePresentation)
-		 $customLayout = $presentation.Slides.item(2).customLayout
-		 $slide = $presentation.slides.addSlide(1,$customLayout)
-		 $slide.layout = $slideType::ppLayoutTitle
-		 $slide.Shapes.title.TextFrame.TextRange.Text = $_.group
-		 $slide.shapes.item(2).TextFrame.TextRange.Text = $_.date
-
-		 $presentation.SavecopyAs("C:\fso\$($_.group)")
-		 $presentation.Close()
-		 "Created $($_.group)"
-		}
-
-		$application.quit()
-		$application = $null
-		[gc]::collect()
-		[gc]::WaitForPendingFinalizers()
-			
-}
-
 Function Exportto-html {
 	
 	<#
