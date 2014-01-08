@@ -69,7 +69,7 @@ function ExportTo-PowerPoint {
 			
 		#Creating the ComObject
 			$Application = New-Object -ComObject powerpoint.application
-			$application.visible = $MSTrue
+			#$application.visible = $MSTrue
 	}
 	Process{
 		#Creating the presentation
@@ -77,6 +77,7 @@ function ExportTo-PowerPoint {
 		#Adding the first slide
 			$Titleslide = $Presentation.Slides.add(1,$slideTypeTitle)
 			$Titleslide.Shapes.Title.TextFrame.TextRange.Text = $Title
+			$Titleslide.shapes.item(2).TextFrame.TextRange.Text = $Subtitle
 			$Titleslide.BackgroundStyle = 11
 
 		#Adding the charts
@@ -98,6 +99,10 @@ function ExportTo-PowerPoint {
 end {
 		$presentation.Saveas($exportPath)
 	 	$presentation.Close()
+		$Application.quit()
+		[gc]::collect()
+		[gc]::WaitForPendingFinalizers()
+		$Application =  $null
 	}
 	
 }
@@ -109,3 +114,5 @@ $obj1 = [pscustomobject]@{Path="E:\Users\Administrator\Pictures\Pepe-thumbs-up.j
 $a += $obj1 
 $obj2 = [pscustomobject]@{Path="E:\Users\Administrator\Pictures\vlcsnap-2013-08-20-23h52m03s141.png"; Title="Woopy di woof!!"}
 $a += $obj2
+
+ExportTo-PowerPoint -ExportPath "D:\temp\plop.pptx" -GraphInfos $a -title "PowerShell Monks" -Subtitle "Event 00 - Practice"
