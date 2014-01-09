@@ -287,7 +287,7 @@ Function New-Chart {
 						# $chart.SaveImage($stream, "png")
 						
 						# $output += New-Object PSObject -Property @{Label = $data.PropertyName; Bytes = $stream.GetBuffer()}
-						$chart.SaveImage("$Path\Chart-$($data.PropertyName)","png")
+						$chart.SaveImage("$Path\Chart-$($data.PropertyName).png","png")
 						$output += New-Object PSObject -Property @{Title = $data.PropertyName; Path = "$Path\$($data.PropertyName).png"}
 						
 						#$today = (Get-Date).ToString("yyyy-MM-dd")
