@@ -45,6 +45,28 @@ function ExportTo-PowerPoint {
 	
 	Exports data to a HTML file located in d:\temp\export.html with a title "Data export". Adds also an image in the HTML output.
 	#Remark: -image must be  of Byte format.
+	.LINK
+	#PowerPoint ComObject main help page
+		http://msdn.microsoft.com/en-us/library/aa189759(v%3Doffice.10).aspx
+	#Create a SlideShow
+		http://msdn.microsoft.com/en-us/library/office/aa220415(v=office.11).aspx
+	#Shapes
+		#Shape help
+			http://msdn.microsoft.com/en-us/library/office/bb265573(v=office.12).aspx
+		#Adding Shapes to slides
+			http://msdn.microsoft.com/en-us/library/aa163597(v=office.10).aspx
+		#Text in a shape
+			http://msdn.microsoft.com/en-us/library/aa189295(v=office.10).aspx
+		#Working with shapes on slides
+			http://msdn.microsoft.com/en-us/library/aa141428(v=office.10).aspx
+		#Adding picture to Shapes
+		http://msdn.microsoft.com/en-us/library/office/bb230700(v=office.12).aspx
+	#Interesting office com object examples (powerpoint 3rd example)
+		http://www.autohotkey.com/board/topic/56987-com-object-reference-autohotkey-l/page-4
+	#Scripting guy basic information
+		http://blogs.technet.com/b/heyscriptingguy/archive/2010/05/12/hey-scripting-guy-can-i-add-a-new-slide-to-an-existing-microsoft-powerpoint-presentation.aspx
+	#Maybe solution for Byteimage
+		http://msdn.microsoft.com/en-us/library/office/bb251372(v=office.12).aspx
 #>
 	
 	[cmdletbinding()]
@@ -64,6 +86,7 @@ function ExportTo-PowerPoint {
 		#DEfining PowerPoints main variables
 			$MSTrue=[Microsoft.Office.Core.MsoTriState]::msoTrue
 			$MsFalse=[Microsoft.Office.Core.MsoTriState]::msoFalse
+		#http://msdn.microsoft.com/en-us/library/microsoft.office.interop.powerpoint.ppslidelayout(v=office.14).aspx
 			$slideTypeTitle = [microsoft.office.interop.powerpoint.ppSlideLayout]::ppLayoutTitle
 			$SlideTypeChart = [microsoft.office.interop.powerpoint.ppSlideLayout]::ppLayoutChart
 			
