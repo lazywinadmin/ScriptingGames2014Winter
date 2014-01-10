@@ -269,10 +269,21 @@ function Export-PowerPoint {
 	Exports Charts to PowerPoint format
 
 	.DESCRIPTION
-	Export the graphs to a powerpoint presentation.
+	Export the Charts to a powerpoint presentation. The first page is a Title with a subtitle. Then one slide will be created for each graph together with a main title.
 	
-	.PARAMETER  <ExportPath>
-	Specifies de export path (must be have either .ppt or pptx as extension).
+	.PARAMETER  <Path>
+	Specifies de export path folder (must be a folder).
+	
+	.PARAMETER  <GraphInfos>
+	This parameter must be an object with the following two headers : Path;Title.
+	Path --> Represents the the path to the physical location of the chart.
+	Title --> A short title of what the chart represent
+	
+	.PARAMETER  <Title>
+	Title that will be used on all documents (Front page of the PowerPoint export, Header of Html file). 
+	
+	.PARAMETER  <Subtitle>
+	SubTitle that will be used on all documents (Front page of the PowerPoint export, Header of Html file (Underneath the title)). 
 	
 	.PARAMETER  <Debug>
 	This parameter is optional, and will if called, activate the deubbing mode wich can help to troubleshoot the script if needed. 
