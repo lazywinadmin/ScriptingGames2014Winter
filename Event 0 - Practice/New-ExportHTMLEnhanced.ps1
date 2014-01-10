@@ -444,12 +444,12 @@ body {
 	font-family:"Tahoma", "Lucida Sans Unicode", Verdana, Arial, Helvetica, sans-serif;
 	font-size:12px;
 }
-		
+
 #container {
 	padding-top:50px;
 	padding-bottom:50px;
 }
-		
+
 #core {
 	background-color: #efefef;
 	-webkit-background-size: 50px 50px;
@@ -463,7 +463,7 @@ body {
 	margin: 0 auto;
 	width: 880px;
 }
-		
+
 #header {
 	background-color: #2d2d2d;
 	border-bottom: 3px solid #666863;
@@ -508,12 +508,32 @@ body {
 }
 
 #values_container {
-	background-color: #ede0ff;
+	background-color: #fffced;
 	border: 1px solid #bcb3cc;
 	margin: 0px auto 15px;
 	margin-top: 15px;
 	padding: 5px;
 	width: 800px;
+}
+
+#informations {
+	border-collapse: collapse;
+	border: 1px solid #888;
+	margin: 5px;
+}
+
+#informations td {
+	padding-left: 10px;
+	padding-right: 20px;
+}
+
+#informations th {
+	background-color: #ffee9b;
+	border: 1px solid #000;
+}
+
+#informations tr {
+	background-color: #fff8d8;
 }
 
 .title_chart {
@@ -551,8 +571,7 @@ a:link { color: blue; }
 			<span id="content_header">Table of contents:</span>
 			<ul>'
 		
-		ForEach ($item in $GraphInfos)
-		{
+		ForEach ($item in $GraphInfos) {
 			$html += '
 				<li><a href="#anch' + $item.Title + '">Chart: ' + $item.Title + '</a></li>'
 		}
@@ -564,8 +583,7 @@ a:link { color: blue; }
 		'
 		
 		# Generate the graphs
-		ForEach ($item in $GraphInfos)
-		{
+		ForEach ($item in $GraphInfos) {
 			$converted = [System.Convert]::ToBase64String($item.Bytes)
 			$html += '<div id="chart_container">
 				<span id="anch' + $item.Title + '" class="title_chart">Chart: ' + $item.Title + '</span><br />
@@ -576,14 +594,37 @@ a:link { color: blue; }
 		# Generate a table for the analyzed computers
 		$html += '
 			<div id="values_container">
-				<span id="anchValues" class="title_chart">Analyzed Computers</span><br />'
+				<span id="anchValues" class="title_chart">Analyzed Computers</span><br />
+				<table id="informations">
+				'
 		
+		# Todo: Add a label or a title to get a better visual of the given property
+		ForEach ($item in $Data) {
+			# We retrieve the NoteProperties from the given object, we don't need the methods, we skip the computername since it's our header
+			$properties = ($item | Get-Member | Where-Object {($_.MemberType -eq "NoteProperty") -and ($_.Name -ne "ComputerName")} | Select -ExpandProperty Name)
+			
+			$tableset = '<tr><th>Computer Name:</th><th>' + $item.ComputerName + '</th></tr>'
+			ForEach ($property in $properties) {
+				$tableset += '<tr><td>' + $property + '</td><td>' + $($item.$property) + '</td></tr>'
+			}
+			
+			$html += $tableset
+			
+			# $computerName = $item.ComputerName
+			# $html += '
+				# <tr>
+					# <td>
+				# </tr>
+			# '
+			write-host $computerName
+		}
 		# the line below retrieve the NoteProperties of an object by skipping the Method and other stuff. We need a label still.
 		#($obj | Get-Member | Where-Object {$_.MemberType -eq "NoteProperty"} | Select -ExpandProperty Name)
 		
 		#$html += $Data | ConvertTo-Html
 		
 		$html += '
+				</table>
 			</div>'
                   <#        
                        	$htmltitle = "<h2>$($title)</h2>"
