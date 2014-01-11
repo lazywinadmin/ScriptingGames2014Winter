@@ -1,3 +1,5 @@
+
+Import-Module PKI
 function Get-Inventory {
 	<#
 	.SYNOPSIS
@@ -115,19 +117,19 @@ function Get-Inventory {
 	
 		[Parameter(
 			ParameterSetName="ReportCSV")]
-		[Switch]$ReportCSV
+		[Switch]$ReportCSV,
 	
 		[Parameter(
 			ParameterSetName="ReportHTML")]
-		[Switch]$ReportHTML
+		[Switch]$ReportHTML,
 	
 		[Parameter(
 			ParameterSetName="ReportPowerPoint")]
-		[Switch]$ReportPowerPoint
+		[Switch]$ReportPowerPoint,
 	
 		[Parameter(ParameterSetName="ReportHTML")]
 		[Parameter(ParameterSetName="ReportPowerPoint")]
-		[String]$Title = "Inventory Report"
+		[String]$Title = "Inventory Report",
 	
 		[Parameter(ParameterSetName="ReportHTML")]
 		[Parameter(ParameterSetName="ReportPowerPoint")]
@@ -137,32 +139,71 @@ function Get-Inventory {
 	BEGIN {
 		TRY {
 			# DOT SOURCING
-			# Scan Scanning
+			# Import Get-IpAddressInRange.ps1 Functions
 			. .\Get-IPAddressInRange.ps1
 			
-			# Gather Information
+			# Import Get-ComputerInventory.ps1 Function
 			. .\Get-ComputerInventory.ps1
 			
-			# Export/Reporting
+			# Import New-Export Function
 			. .\New-Export.ps1
+			
+			# Date Time Information
+			$DateFormat = Get-Date -Format 'yyyyMMdd_hhmmss'
 		}
 		CATCH {
 			Write-Warning -Message "BEGIN Block - Error"
+			$error[0]
 			
 		}
 	}
 	PROCESS {
 		TRY {
-			[]
+			#Splatting Params
+			$ScanParams = $PSBoundParamater.remove("IP","Mask","Report")
+			$ComputerInventoryParams = $PSBoundParamater.remove("IP","Mask","ReportCSV","ReportHTML","ReportPowerPoint","Title","Subtitle")
+			$ReportingParams = $PSBoundParamater.remove("IP","Mask","Credential","Protocol","AllInformation","HardwareInformation","LastPatchInstalled","LastReboot","ApplicationsInstalled","WindowsComponents")
+			
+			#IP SCAN
+			IF ($PSBoundParamater["IP"] -and $PSBoundParamater["Mask"]){
+				$IPScan = Get-IpAddressInRange @ScanParams
+				#FileName for export
+				$IP -replace "/","_"
+				$ScanFileFormat = "SCAN-$IP_$Mask-$DateFormat.csv"
+				
+				
+			}
+			IF ($PSBoundParamater["IP"] -and (-not($PSBoundParamater["Mask"]))){
+				$IPScan = Get-IpAddressInRange @ScanParams
+				
+				#FileName for export
+				$IP -replace "/","_"
+				$ScanFileFormat = "SCAN-$IP-$DateFormat.csv"
+			}
+			
+			# Export IP Scan
+			
+			$IPScan | Export-Csv -Path (Join-Path -Path $Path -ChildPath $ScanFileName)
+			
+			# Gather information
+			Get-ComputerInventory @ComputerInventoryParams
+			
+			# Reporting
+			IF ($ReportCSV -or $ReportHTML -or $ReportHTML)
+			New-Export @ReportingParams
 			
 		}
 		CATCH {
+			Write-Warning -Message "PROCESS Block - Error"
+			$error[0]
 		}
 	}
 	END {
 		TRY {
 		}
 		CATCH {
+			Write-Warning -Message "END Block - Error"
+			$error[0]
 		}
 	}
 }
