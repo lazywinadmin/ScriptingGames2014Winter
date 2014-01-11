@@ -413,9 +413,9 @@ Function Get-IPAddressinRange
                            ValueFromPipelineByPropertyName                    
                             )]
                 [ValidateScript({
-                                if ($_.contains("/"))
+                                if ($_ -like "*/*")
                                     { # if the specified IP format is -- 10.10.10.0/24
-                                        $temp = $_.split('/')   
+                                        $temp = $_  -split '/'
                                         If (([ValidateRange(0,32)][int]$subnetmask = $temp[1]) -and ([bool]($temp[0] -as [ipaddress])))
                                         {
                                             Return $true
@@ -439,7 +439,7 @@ Function Get-IPAddressinRange
                 # Param2 help description
                 [Parameter(ParameterSetName='Non-CIDR')]
                 [ValidateScript({
-                                if ($_.contains("."))
+                                if ($_ -like "*.*.*.*")
                                 { #the mask is in the dotted decimal 255.255.255.0 format
                                     if (! [bool]($_ -as [ipaddress]))
                                     {
