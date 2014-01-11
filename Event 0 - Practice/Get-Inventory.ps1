@@ -7,7 +7,6 @@ function Get-Inventory {
 		Get-Inventory function can Scan a subnet, Gather information on available computer(s) and Export the information into HTML/CSV or PPTX file
 
 	.PARAMETER  IP
-		
 
 	.PARAMETER  MASK
 	
@@ -50,9 +49,37 @@ function Get-Inventory {
 #>
 	[CmdletBinding()]
 	PARAM(
-		$IP,
-		$Mask,
-		$Path,
+        [Parameter(Mandatory=$true, 
+                   ValueFromPipeline=$true,
+                   ValueFromPipelineByPropertyName=$true)]
+        [Alias("IPAddress","NetworkRange")] 
+        [String]$IP,
+
+        [Parameter(ParameterSetName='Non-CIDR')]
+        [ValidateScript({
+            IF ($_.contains("."))
+            { #the mask is in the dotted decimal 255.255.255.0 format
+                IF (! [bool]($_ -as [ipaddress]))
+                {
+					throw "Subnet Mask Validation Failed"
+                }ELSE{
+					return $true}#ELSE
+            }#IF
+            ELSE
+            { #the mask is an integer value so must fall inside range [0,32]
+               # use the validate range attribute to verify it falls under the range
+                IF ([ValidateRange(0,32)][int]$subnetmask = $_ )
+                { 	return $true
+				}ELSE{
+					throw "Invalid Mask Value"
+				}#ELSE
+            }#ELSE
+            
+             })]
+        [string]$Mask,
+		
+		[Alias("ExportPath","Export","Directory")]
+		[string]$Path=$(Get-ScriptDirectory),
 	
 		[Alias("RunAs")]
 		[System.Management.Automation.Credential()]
@@ -61,23 +88,50 @@ function Get-Inventory {
 		[Parameter()]
 		[ValidateSet("WSMAN","DCOM")]
 		[String]$Protocol,
+	
+		[Parameter(
+			ParameterSetName="AllInformation")]
+		[Switch]$AllInformation,
 		
+		[Parameter(
+			ParameterSetName="Information")]
 		[Switch]$HardwareInformation,
 		
+		[Parameter(
+			ParameterSetName="Information")]
 		[Switch]$LastPatchInstalled,
 	
+		[Parameter(
+			ParameterSetName="Information")]
 		[Switch]$LastReboot,
-	
+		
+		[Parameter(
+			ParameterSetName="Information")]
 		[Switch]$ApplicationsInstalled,
 	
+		[Parameter(
+			ParameterSetName="Information")]
 		[Switch]$WindowsComponents,
 	
-		[Parameter(ParameterSetName="Reporting")]
-		[Switch]$Report,
+		[Parameter(
+			ParameterSetName="ReportCSV")]
+		[Switch]$ReportCSV
 	
-		[Parameter(ParameterSetName="Reporting",Mandatory,HelpMessage="Please specify the type of report."))]
-		[Validateset("CSV","HTML","PowerPoint")]
-		$ReportType
+		[Parameter(
+			ParameterSetName="ReportHTML")]
+		[Switch]$ReportHTML
+	
+		[Parameter(
+			ParameterSetName="ReportPowerPoint")]
+		[Switch]$ReportPowerPoint
+	
+		[Parameter(ParameterSetName="ReportHTML")]
+		[Parameter(ParameterSetName="ReportPowerPoint")]
+		[String]$Title = "Inventory Report"
+	
+		[Parameter(ParameterSetName="ReportHTML")]
+		[Parameter(ParameterSetName="ReportPowerPoint")]
+		[String]$SubTitle = "Team: POSH Monks\n Winter Scripting Games 2014 - Event:00 (Practice)"
 	)
 	
 	BEGIN {
@@ -93,11 +147,13 @@ function Get-Inventory {
 			. .\New-Export.ps1
 		}
 		CATCH {
+			Write-Warning -Message "BEGIN Block - Error"
 			
 		}
 	}
 	PROCESS {
 		TRY {
+			[]
 			
 		}
 		CATCH {
@@ -108,5 +164,18 @@ function Get-Inventory {
 		}
 		CATCH {
 		}
+	}
+}
+
+
+function Get-ScriptDirectory
+{ 
+	if($hostinvocation -ne $null)
+	{
+		Split-Path $hostinvocation.MyCommand.path
+	}
+	else
+	{
+		Split-Path $script:MyInvocation.MyCommand.Path
 	}
 }
