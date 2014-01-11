@@ -529,7 +529,7 @@ Function Get-IPAddressinRange
             End
 	        {
                 Write-Verbose -Message "Get-OSInfo : Ending the Function"
-				write-output $out
+				#write-output $out
             }
         }#end Function Get-OSinfo
 
