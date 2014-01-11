@@ -148,7 +148,7 @@ function Get-ComputerInventory {
 				
 				# Connectivity
                 Write-Verbose -Message "$Computer - Testing Connection..."
-                Test-Connection -ComputerName $Computer -count 1 -Quiet -ErrorAction Stop -ErrorVariable ProcessErrorTestConnection | Out-Null
+                Test-Connection -ComputerName $Computer -count 1 -ErrorAction Stop -ErrorVariable ProcessErrorTestConnection | Out-Null
 								
 				# Credential
 				IF ($PSBoundParameters['Credential']) {$CIMSessionParams.credential = $Credential}
