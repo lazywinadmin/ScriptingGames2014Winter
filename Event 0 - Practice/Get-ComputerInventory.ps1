@@ -1,21 +1,3 @@
-
-<#
-# TO DO
--Should OS and SP being imported from the list of IP ?
--Validate Parameter
--Files: Validate Naming Convention accepted by Windows ([A-Z]|[a-z]|[0-9]|_|-|\.|\s)+
--if WSMAN (v3) fail, fall back on DCOM, fallback on pssession (wsman v2)
--LogPath parameter ?
--Save in CSV format, one file per computer COMPUTERNAME_Inventory_YYYYMMDD-HHMMSS.csv
--lastbootuptime does not seem accurate
--Job ? workflow (parallele work)?
--File format should include ? LR LP HW APP CMPNT
--win32_product
--localdisk: Where-Object {$_.InterfaceType -like "IDE"}	|
--Put the full cmdlet name + full parameter
-#>
-
-
 function Get-ComputerInventory {
 <#
 	.SYNOPSIS
@@ -79,7 +61,52 @@ function Get-ComputerInventory {
 	
 		This example shows what return the cmdlet using the switch HardwareInformation.
 
+	.EXAMPLE
+		Get-ComputerInventory -ComputerName localhost -AllInformation
+	
+		Manufacturer        : System manufacturer
+		WindowsComponents   : {@{Name=Microsoft-Hyper-V-All; Caption=Hyper-V}, @{Name=Microsoft-Hyper-V-Tools-All;
+		                      Caption=Hyper-V Management Tools}, @{Name=Microsoft-Hyper-V; Caption=Hyper-V Platform},
+		                      @{Name=Microsoft-Hyper-V-Management-Clients; Caption=Hyper-V GUI Management Tools}...}
+		IISInstalled        : False
+		ExchangeInstalled   : False
+		Model               : System Product Name
+		Connectivity        : Online
+		SharepointInstalled : False
+		LastReboot          : 2013-12-26 1:18:06 PM
+		LocalDisks          : @{DeviceID=\\.\PHYSICALDRIVE0; SizeGB=111.79; SerialNumber=OCZ-81YI8A4R3333YAQ2;
+		                      Model=OCZ-VERTEX3 ATA Device; Manufacturer=(Standard disk drives); InterfaceType=IDE}
+		LastPatchInstalled  : @{HotFixID=KB2898785; Caption=http://support.microsoft.com/?kbid=2898785; Description=Security
+		                      Update}
+		NumberOfProcessors  : 1
+		ComputerName        : XAVIERDESKTOP
+		SQLInstalled        : False
+		MemoryGB            : 4.00
 
+
+	.EXAMPLE
+		"localhost" | Get-ComputerInventory -AllInformation
+	
+		Manufacturer        : System manufacturer
+		WindowsComponents   : {@{Name=Microsoft-Hyper-V-All; Caption=Hyper-V}, @{Name=Microsoft-Hyper-V-Tools-All;
+		                      Caption=Hyper-V Management Tools}, @{Name=Microsoft-Hyper-V; Caption=Hyper-V Platform},
+		                      @{Name=Microsoft-Hyper-V-Management-Clients; Caption=Hyper-V GUI Management Tools}...}
+		IISInstalled        : False
+		ExchangeInstalled   : False
+		Model               : System Product Name
+		Connectivity        : Online
+		SharepointInstalled : False
+		LastReboot          : 2013-12-26 1:18:06 PM
+		LocalDisks          : @{DeviceID=\\.\PHYSICALDRIVE0; SizeGB=111.79; SerialNumber=OCZ-81YI8A4R3333YAQ2;
+		                      Model=OCZ-VERTEX3 ATA Device; Manufacturer=(Standard disk drives); InterfaceType=IDE}
+		LastPatchInstalled  : @{HotFixID=KB2898785; Caption=http://support.microsoft.com/?kbid=2898785; Description=Security
+		                      Update}
+		NumberOfProcessors  : 1
+		ComputerName        : XAVIERDESKTOP
+		SQLInstalled        : False
+		MemoryGB            : 4.00
+	
+		This example shows what return the cmdlet using the switch HardwareInformation.
 	.OUTPUTS
 		PsCustomObject
 		CliXML file
