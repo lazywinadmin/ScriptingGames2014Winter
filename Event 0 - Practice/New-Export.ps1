@@ -1,11 +1,3 @@
-#========================================================================
-# 
-# Created on:   1/5/2014 1:08 PM
-# Created by:   Administrator
-# Organization: 
-# Filename:     
-#========================================================================
-
 Function New-Chart {
 <#
 	.SYNOPSIS
@@ -638,7 +630,7 @@ function New-Export {
 		$Subtitle="Team: POSH Monks\n Winter Scripting Games 2014 - Event:00 (Practice)"
 	)
 	Begin {
-		$now = (Get-Date).ToString("yyyyMMdd_HHmmss")
+		$now = Get-Date -Format "yyyyMMdd_HHmmss"
 		
 		if ($ExportCSV) {
 			$FileName = "Export-$($now).csv"
@@ -664,11 +656,13 @@ function New-Export {
 	Process { }
 	End {
 		Foreach ($output in $ArrayImage) {
-			Remove-Item $output.Path
+			Remove-Item $output.Path -Force -ErrorAction 'SilentlyContinue' | Out-Null
 		}
 	}
 }
 
+
+<#
 ########Testing#############
 
 $cp1 = New-Object PSObject -Property @{
@@ -723,3 +717,4 @@ $computers = @($cp1, $cp2, $cp3)
 	# New-export -Path "c:\ps\" -ExportHTML -title $Title -Subtitle $SubTitle -ArrayImage $output -Data $computers
 #Export Html
 	# New-export -Path "c:\ps\" -Exportype "html" -title $Title -Subtitle $SubTitle -Data $computers -ArrayImage $Output
+#>
