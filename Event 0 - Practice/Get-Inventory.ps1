@@ -124,37 +124,23 @@ function Split-Job
 	{
 
 		$StartTime = Get-Date
-
 		#$DisplayTime = $StartTime.AddMilliseconds( - $DisplayInterval )
-
 		$ExitForced = $false
 
 
-
-
-
 		 function Init ($InputQueue){
-
 			# Create the shared thread-safe queue and fill it with the input objects
-
 			$Queue = [Collections.Queue]::Synchronized([Collections.Queue]@($InputQueue))
-
 			$QueueLength = $Queue.Count
-
+			
 			# Do not create more runspaces than input objects
-
 			if ($MaxPipelines -gt $QueueLength) {$MaxPipelines = $QueueLength}
-
 			# Create the script to be run by each runspace
-
 			$Script  = "Set-Location '$PWD'; "
-
 			$Script += {
 
 				$SplitJobQueue = $($Input)
-
 				& {
-
 					trap {continue}
 
 					while ($SplitJobQueue.Count) {$SplitJobQueue.Dequeue()}
