@@ -154,7 +154,6 @@ function Get-Inventory {
 		CATCH {
 			Write-Warning -Message "BEGIN Block - Error"
 			$error[0]
-			
 		}
 	}
 	PROCESS {
@@ -166,7 +165,7 @@ function Get-Inventory {
 			
 			#IP SCAN
 			IF ($PSBoundParamater["IP"] -and $PSBoundParamater["Mask"]){
-				$IPScan = Get-IpAddressInRange @ScanParams
+				$IPScan = Split-Job -ScriptBlock {Get-IpAddressInRange @ScanParams} -Function Get-IpAddressInRange
 				#FileName for export
 				$IP -replace "/","_"
 				$ScanFileFormat = "SCAN-$IP_$Mask-$DateFormat.csv"
@@ -174,7 +173,7 @@ function Get-Inventory {
 				
 			}
 			IF ($PSBoundParamater["IP"] -and (-not($PSBoundParamater["Mask"]))){
-				$IPScan = Get-IpAddressInRange @ScanParams
+				$IPScan = Split-Job -ScriptBlock {Get-IpAddressInRange @ScanParams} -Function Get-IpAddressInRange
 				
 				#FileName for export
 				$IP -replace "/","_"
@@ -186,11 +185,13 @@ function Get-Inventory {
 			$IPScan | Export-Csv -Path (Join-Path -Path $Path -ChildPath $ScanFileName)
 			
 			# Gather information
-			Get-ComputerInventory @ComputerInventoryParams
+			Split-Job -ScriptBlock {Get-ComputerInventory -ComputerName $IPScan.ComputerName @ComputerInventoryParams} -function Get-ComputerInventory
 			
 			# Reporting
 			IF ($ReportCSV -or $ReportHTML -or $ReportHTML)
-			New-Export @ReportingParams
+			{
+				New-Export @ReportingParams
+			}
 			
 		}
 		CATCH {

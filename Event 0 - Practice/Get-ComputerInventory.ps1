@@ -12,8 +12,6 @@
 -win32_product
 -localdisk: Where-Object {$_.InterfaceType -like "IDE"}	|
 -Put the full cmdlet name + full parameter
-
-
 #>
 
 
@@ -341,12 +339,3 @@ function Get-ComputerInventory {
 		}#CATCH Block
 	}#END Block
 }#Function Get-ComputerInventory
-
-
-
-#Export-ModuleMember -Function Get-Something
-
-# Optional commands to create a public alias for the function
-#New-Alias -Name gs -Value Get-Something
-#Export-ModuleMember -Alias gs
-
