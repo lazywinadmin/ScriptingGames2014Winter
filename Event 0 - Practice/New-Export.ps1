@@ -292,8 +292,8 @@ function Export-PowerPoint {
 	Param(
 		[Parameter(mandatory=$true)]$Path = $(throw "Path is mandatory, please provide a value."),
 		[Parameter(mandatory=$true)]$GraphInfos,
-		[Parameter(mandatory=$false)]$title="Inventory Report",
-		[Parameter(mandatory=$false)]$Subtitle="Team: POSH Monks\n Winter Scripting Games 2014 - Event:00 (Practice)"
+		[Parameter(mandatory=$false)]$title,
+		[Parameter(mandatory=$false)]$Subtitle
 	)
 
 	Begin {
@@ -387,8 +387,8 @@ Function Export-Html {
 		[Parameter(mandatory=$true)]$Path = $(throw "Path is mandatory, please provide a value."),
 		[Parameter(mandatory=$false)]$GraphInfos,
 		[Parameter(mandatory=$false)]$Data,
-		[Parameter(mandatory=$false)]$title="Inventory Report",
-		[Parameter(mandatory=$false)]$Subtitle="Team: POSH Monks\n Winter Scripting Games 2014 - Event:00 (Practice)"
+		[Parameter(mandatory=$false)]$title,
+		[Parameter(mandatory=$false)]$Subtitle
 	)
 	
 	Begin{
@@ -612,9 +612,9 @@ function New-Export {
 	Param(
 		[Parameter(mandatory=$true)]$Path = $(throw "Path is mandatory, please provide a value."), #Full  path ? Or folder path ?
 		
-		[Parameter(ParameterSetName="HTML")]
-		[Parameter(ParameterSetName="CSV")]
-		[Parameter(mandatory=$true)]$Data,
+		[Parameter(mandatory=$true, ParameterSetName="HTML")]
+		[Parameter(mandatory=$true, ParameterSetName="CSV")]
+		$Data,
 		
 		[Parameter(ParameterSetName="CSV")]
 		[switch]$ExportCSV,
@@ -631,11 +631,11 @@ function New-Export {
 		
 		[Parameter(mandatory=$false, ParameterSetName="PPT")]
 		[Parameter(mandatory=$false, ParameterSetName="HTML")]
-		$title,
+		$title="Inventory Report",
 		
 		[Parameter(mandatory=$false, ParameterSetName="PPT")]
 		[Parameter(mandatory=$false, ParameterSetName="HTML")]
-		$Subtitle
+		$Subtitle="Team: POSH Monks\n Winter Scripting Games 2014 - Event:00 (Practice)"
 	)
 	Begin {
 		$now = (Get-Date).ToString("yyyyMMdd_HHmmss")
