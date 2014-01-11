@@ -1,72 +1,44 @@
 ##########################
 # SCAN IP RANGE
 ##########################
-
-
-��#TO DO:
-
+#TO DO:
 # Function Get-ValidIPAddressinRange -- returns all possible IP address in the Range specified
-
 # Leverage Split-Job Function to speed-up performance
-
 # Used the Split-Job ....trying to understand how it works and probably improve it with verbose messages
-
 # How to use ??
-
 #Get-ValidIPAddressinRange -IP 10.1.1.1 -mask 255.255.255.0 | split-job -MaxPipelines 50 { ForEach-Object -Process { Get-OSInfo -IPAddress $_ -Verbose }} -Function Get-OSInfo
-
-
 
 #Using the Below Function from poshcode.org
 
 function Split-Job
-
 {
-
     <#
-
-    .Synopsis
-
+    SYNOPSIS
        Run commands in multiple concurrent pipelines.
 
     .DESCRIPTION
-
        The Function takes a Command, Scriptblock or Function and splits and works by creating multiple runspaces.
-
        So that a single Command, Scriptblock or Function can be run against multiple computers in parallel without remoting enabled. 
-
        The MaxPipelines parameter controls the number of simultaneous runspaces
 
-   
-
     .EXAMPLE
-
         Functions/Cmdlets that accept pipeline input with Split-Job
-
         PS C:\>  Get-Content hosts.txt | Split-Job {Test-MyFunction} 
 
     .EXAMPLE
-
        Functions/Cmdlets that don't accept a pipeline input
-
-        PS C:\> Get-Content hosts.txt |% { .\MyScript.ps1 -ComputerName $_ }
+       PS C:\> Get-Content hosts.txt |% { .\MyScript.ps1 -ComputerName $_ }
 
     .EXAMPLE
-
        Specify the IPaddress and mask separately (Non-CIDR notation)
-
-         function Test-Function ($ComputerName) {
-
-               Get-WMIObject -Class Win32_Bios -Computername $Computername
-
+       function Test-Function ($ComputerName) {
+		Get-WMIObject -Class Win32_Bios -Computername $Computername
          }
-
-         Get-Content hosts.txt | Split-Job {%{Test-Function -Computername $_ }} -Function Test-Function
+	Get-Content hosts.txt | Split-Job {%{Test-Function -Computername $_ }} -Function Test-Function
 
     .EXAMPLE
 
          Using Split-Job , When the ScriptBlock or Function requires cmdlet in a Module
-
          Get-Content Users.txt | Split-Job { % { Get-ADUser -Identity $_ } } -InitializeScript { Import-Module ActiveDirectory }
 
     .INPUTS
@@ -80,117 +52,69 @@ function Split-Job
     .NOTES
 
        Author - Arnoud Jansveld
-
        Version History
-
          1.2    Changes by Stephen Mills - stephenmills at hotmail dot com
-
                 Only works with PowerShell V2
-
                 Modified error output to use ErrorRecord parameter of Write-Error - catches Category Info then.
-
                 Works correctly in powershell_ise.  Previous version would let pipelines continue if ESC was pressed.  If Escape pressed, then it will do an async cancel of the pipelines and exit.
-
                 Add seconds remaining to progress bar
-
                 Parameters Added and related functionality:
-
                    InitializeScript - allows to have custom scripts to initilize ( Import-Module ...), parameter might be renamed Begin in the future.
-
                    MaxDuration - Cancel all pending and in process items in queue if the number of seconds is reached before all input is done.
-
                    ProgressInfo - Allows you to add additional text to progress bar
-
                    NoProgress - Hide Progress Bar
-
                    DisplayInterval - frequency to update Progress bar in milliseconds
-
                    InputObject - not yet used, planned to be used in future to support start processing the queue before pipeline isn't finished yet
 
                 Added example for importing a module.
 
          1.0    First version posted on poshcode.org
-
                 Additional runspace error checking and cleanup
-
          0.93   Improve error handling: errors originating in the Scriptblock now
-
                 have more meaningful output
-
                 Show additional info in the progress bar (thanks Stephen Mills)
-
                 Add SnapIn parameter: imports (registered) PowerShell snapins
-
                 Add Function parameter: imports functions
-
                 Add SplitJobRunSpace variable; allows scripts to test if they are
-
                 running in a runspace
-
+                
          0.92   Add UseProfile switch: imports the PS profile
-
                 Add Variable parameter: imports variables
-
                 Add Alias parameter: imports aliases
-
                 Restart pipeline if it stops due to an error
-
                 Set the current path in each runspace to that of the calling process
 
          0.91   Revert to v 0.8 input syntax for the script block
-
                 Add error handling for empty input queue
-
+                
          0.9    Add logic to distinguish between scriptblocks and cmdlets or scripts:
-
                 if a ScriptBlock is specified, a foreach {} wrapper is added
 
          0.8    Adds a progress bar
-
          0.7    Stop adding runspaces if the queue is already empty
-
          0.6    First version. Inspired by Gaurhoth's New-TaskPool script
 
-
-
     .LINK
-
         http://www.jansveld.net/powershell
-
 
 
     #>
 
 	param (
-
 		[Parameter(Position=0, Mandatory=$true)]$Scriptblock,
-
 		[Parameter()][int]$MaxPipelines=10,
-
 		[Parameter()][switch]$UseProfile,
-
 		[Parameter()][string[]]$Variable,
-
 		[Parameter()][string[]]$Function = @(),
-
 		[Parameter()][string[]]$Alias = @(),
-
 		[Parameter()][string[]]$SnapIn,
-
 		[Parameter()][float]$MaxDuration = $( [Int]::MaxValue ),
-
 		[Parameter()][string]$ProgressInfo ='',
-
 		[Parameter()][int]$ProgressID = 0,
-
 		[Parameter()][switch]$NoProgress,
-
 		[Parameter()][int]$DisplayInterval = 300,
-
 		[Parameter()][scriptblock]$InitializeScript,
-
 		[Parameter(ValueFromPipeline=$true)][object[]]$InputObject
-
 	)
 
 
