@@ -377,10 +377,9 @@ Function Export-Html {
 	
 	.EXAMPLE
 	In order to call the script in debugging mode
-	Export-Html -Image $ByteImage -Data (Get-service) "d:\temp\export.html" -title "Data Service export" -GraphInfos $chartoutput
+	Export-Html -Data (Get-service) "d:\temp\export.html" -title "Data Service export" -GraphInfos $chartoutput
 	
-	Exports data to a HTML file located in d:\temp\export.html with a title "Data export". Adds also an image in the HTML output.
-	#Remark: -image must be  of Byte format.
+	Exports data to a HTML file located in d:\temp\export.html with a title "Data export".
 #>
 	
 	[cmdletbinding()]
@@ -389,8 +388,7 @@ Function Export-Html {
 		[Parameter(mandatory=$false)]$GraphInfos,
 		[Parameter(mandatory=$false)]$Data,
 		[Parameter(mandatory=$false)]$title,
-		[Parameter(mandatory=$false)]$Subtitle,
-		[Parameter(mandatory=$false)]$Image
+		[Parameter(mandatory=$false)]$Subtitle
 	)
 	
 	Begin{
@@ -613,41 +611,62 @@ function New-Export {
 	[cmdletbinding()]
 	Param(
 		[Parameter(mandatory=$true)]$Path = $(throw "Path is mandatory, please provide a value."), #Full  path ? Or folder path ?
-		[Parameter(mandatory=$false)]$Data,
-		[Parameter(mandatory=$false)][Validateset("csv", "html", "powerpoint")][String]$Exportype,
-		[Parameter(mandatory=$false, ParameterSetName="ppt")]$ArrayImage,
-		[Parameter(mandatory=$false)]$title,
-		[Parameter(mandatory=$false)]$Subtitle,
-		[Parameter(mandatory=$false)]$Image
+		
+		[Parameter(ParameterSetName="HTML")]
+		[Parameter(ParameterSetName="CSV")]
+		[Parameter(mandatory=$true)]$Data,
+		
+		[Parameter(ParameterSetName="CSV")]
+		[switch]$ExportCSV,
+		
+		[Parameter(ParameterSetName="HTML")]
+		[switch]$ExportHTML,
+		
+		[Parameter(ParameterSetName="PPT")]
+		[switch]$ExportPowerPoint,
+		
+		[Parameter(mandatory=$true, ParameterSetName="PPT")]
+		[Parameter(mandatory=$true, ParameterSetName="HTML")]
+		$ArrayImage,
+		
+		[Parameter(mandatory=$true, ParameterSetName="PPT")]
+		[Parameter(mandatory=$true, ParameterSetName="HTML")]
+		$title,
+		
+		[Parameter(mandatory=$true, ParameterSetName="PPT")]
+		[Parameter(mandatory=$true, ParameterSetName="HTML")]
+		$Subtitle
 	)
 	Begin {
 		$now = (Get-Date).ToString("yyyyMMdd_HHmmss")
-		switch ($Exportype){
-			("csv"){
-				$FileName = "Export-$($now).csv"
-				$ExportPath = Join-Path -Path $Path -ChildPath $FileName
-				Write-Verbose "exporting the file to $($exportPath)"	
-				$Data | Export-Csv -Path $ExportPath -NoTypeInformation
-			}
-			("Html"){
-				$FileName = "Export-$($now).html"
-				$ExportPath = Join-Path -Path $Path -ChildPath $FileName
-				Write-Verbose "exporting the file to $($exportPath)"	
-				Export-Html -Data $Data -title $title -Subtitle $Subtitle -Path $ExportPath -GraphInfos $ArrayImage
-			}
-			("PowerPoint"){
-				$FileName = "Export-$($now).pptx"
-				$ExportPath = Join-Path -Path $Path -ChildPath $FileName
-				Write-Verbose "exporting the file to $($exportPath)"	
-				Export-PowerPoint -title $Title -Subtitle $SubTitle -Path $ExportPath -GraphInfos $ArrayImage
-			}
-			default {
-				Write-Host "none"
-			}
+		
+		if ($ExportCSV) {
+			$FileName = "Export-$($now).csv"
+			$ExportPath = Join-Path -Path $Path -ChildPath $FileName
+			Write-Verbose "exporting the file to $($exportPath)"	
+			$Data | Export-Csv -Path $ExportPath -NoTypeInformation
+		}
+		
+		if ($ExportHTML) {
+			$FileName = "Export-$($now).html"
+			$ExportPath = Join-Path -Path $Path -ChildPath $FileName
+			Write-Verbose "exporting the file to $($exportPath)"	
+			Export-Html -Data $Data -title $title -Subtitle $Subtitle -Path $ExportPath -GraphInfos $ArrayImage
+		}
+		
+		if ($ExportPowerPoint) {
+			$FileName = "Export-$($now).pptx"
+			$ExportPath = Join-Path -Path $Path -ChildPath $FileName
+			Write-Verbose "exporting the file to $($exportPath)"	
+			Export-PowerPoint -title $Title -Subtitle $SubTitle -Path $ExportPath -GraphInfos $ArrayImage
 		}
 	}
 	Process { }
-	End{ }
+	End {
+		Foreach ($output in $ArrayImage) {
+			Remove-Item $output.Path
+		}
+	}
 }
 
 ########Testing#############
@@ -701,6 +720,6 @@ $SubTitle = "Team: POSH Monks\n Winter Scripting Games 2014 - Event:00 (Practice
 
 $Output = New-Chart -Computers $computers -Path "c:\ps" -Roles -OS -Hardware
 #Export powerpoint
-	New-export -Path "c:\ps\" -Exportype "powerpoint" -title $Title -Subtitle $SubTitle -ArrayImage $output
+	New-export -Path "c:\ps\" -ExportHTML -title $Title -Subtitle $SubTitle -ArrayImage $output -Data $computers
 #Export Html
-	New-export -Path "c:\ps\" -Exportype "html" -title $Title -Subtitle $SubTitle -Data $computers -ArrayImage $Output
+	# New-export -Path "c:\ps\" -Exportype "html" -title $Title -Subtitle $SubTitle -Data $computers -ArrayImage $Output
