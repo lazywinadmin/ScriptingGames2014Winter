@@ -3,7 +3,7 @@
 # Leverage Split-Job Function to speed-up performance
 # Used the Split-Job ....trying to understand how it works and probably improve it with verbose messages
 # How to use ??
-#Get-ValidIPAddressinRange -IP 10.1.1.1 -mask 255.255.255.0 | split-job -MaxPipelines 50 { ForEach-Object -Process { Get-OSInfo -IPAddress $_ -Verbose }} -Function Get-OSInfo
+#Get-ValidIPAddressinRange -IP 10.1.1.1 -mask 255.255.255.0 | split-job -MaxPipelines 50 {  Get-OSInfo  -Verbose } -Function Get-OSInfo
 
 #Using the Below Function from poshcode.org
 Function Split-Job
@@ -589,7 +589,7 @@ Function Get-IPAddressinRange
         } #end Function Get-ValidIPAddressinRange
 
         
-        function Get-OSInfo
+         function Get-OSInfo
         {
 	        <#
 		        .SYNOPSIS
@@ -702,13 +702,13 @@ Function Get-IPAddressinRange
 		            if (Resolve-IPAddress -IPAddress $IP)
 		            {
 			            #IP Address resolves to a Hostname
-                        Write-Verbose -Message "Get-OSInfo : $IP is resolving to a hostname $IP.ComputerName"
-			            Write-Verbose -Message "Get-OSInfo : Testing if the $IP.Computername is online"
+                        Write-Verbose -Message "Get-OSInfo : $IP is resolving to a hostname $($IP.ComputerName)"
+			            Write-Verbose -Message "Get-OSInfo : Testing if the $($IP.ComputerName) is online"
                 
                 
                         # Define Splatting
 			            $CIMSessionParams = @{
-				            ComputerName 	= $IP.Computername 
+				            ComputerName 	= $($IP.ComputerName) 
 				            ErrorAction 	= 'Stop'
 				            ErrorVariable	= 'ProcessErrorCIM'
 			            }
@@ -717,14 +717,16 @@ Function Get-IPAddressinRange
                         TRY {
 				            # Prepare Output Variable
 			                $Output = @{
-				                IPAddress = $IP.IPAddressToString
-                                ComputerName = $IP.ComputerName
+				                IPAddress = $($IP.IPAddressToString)
+                                ComputerName = $($IP.ComputerName)
 				                Connectivity = 'Online'
+                                OS = $null
+                                ServicePack = $null #adding this null values here to get the ouput in List format
 			                }
 
 				            # Connectivity
-                            Write-Verbose -Message "Get-OSInfo : $IP.Computername - Testing Connection..."
-                            Test-Connection -ComputerName $IP.ComputerName -count 1 -ErrorAction Stop -ErrorVariable ProcessErrorTestConnection | Out-Null
+                            Write-Verbose -Message "Get-OSInfo : $($IP.ComputerName) - Testing Connection..."
+                            Test-Connection -ComputerName $($IP.ComputerName) -count 1 -ErrorAction Stop -ErrorVariable ProcessErrorTestConnection | Out-Null
 				
                 				
 				            # Credential
@@ -733,21 +735,21 @@ Function Get-IPAddressinRange
 				            # Protocol not specified
 				            IF (-not($PSBoundParameters['Protocol'])){
 					            # Trying with WsMan protocol
-					            Write-Verbose -Message "Get-OSInfo : $IP.ComputerName - Trying to connect via WSMAN protocol"
-					            IF ((Test-WSMan -ComputerName $IP.ComputerName -ErrorAction SilentlyContinue).productversion -match 'Stack: 3.0'){
-						            Write-Verbose -Message "Get-OSInfo : $IP.ComputerName - WSMAN is responsive"
+					            Write-Verbose -Message "Get-OSInfo : $($IP.ComputerName) - Trying to connect via WSMAN protocol"
+					            IF ((Test-WSMan -ComputerName $($IP.ComputerName) -ErrorAction SilentlyContinue).productversion -match 'Stack: 3.0'){
+						            Write-Verbose -Message "Get-OSInfo : $($IP.ComputerName) - WSMAN is responsive"
             			            $CimSession = New-CimSession @CIMSessionParams
             			            $CimProtocol = $CimSession.protocol
-            			            Write-Verbose -message "Get-OSInfo : $IP.ComputerName - [$CimProtocol] CIM SESSION - Opened"
+            			            Write-Verbose -message "Get-OSInfo : $($IP.ComputerName) - [$CimProtocol] CIM SESSION - Opened"
 					            }#IF
 					            ELSE{
 						            # Trying with DCOM protocol
-						            Write-Verbose -message "Get-OSInfo : $IP.ComputerName - WSMAN protocol does not work, failing back to DCOM"
-            			            Write-Verbose -Message "Get-OSInfo : $IP.ComputerName - Trying to connect via DCOM protocol"
+						            Write-Verbose -message "Get-OSInfo : $($IP.ComputerName) - WSMAN protocol does not work, failing back to DCOM"
+            			            Write-Verbose -Message "Get-OSInfo : $($IP.ComputerName) - Trying to connect via DCOM protocol"
 	            		            $CIMSessionParams.SessionOption = New-CimSessionOption -Protocol Dcom
 	            		            $CimSession = New-CimSession @CIMSessionParams
 	            		            $CimProtocol = $CimSession.protocol
-	            		            Write-Verbose -message "Get-OSInfo : $IP.ComputerName - [$CimProtocol] CIM SESSION - Opened"
+	            		            Write-Verbose -message "Get-OSInfo : $($IP.ComputerName) - [$CimProtocol] CIM SESSION - Opened"
 					            }#ELSE
 				            }#IF Block
 				
@@ -756,20 +758,20 @@ Function Get-IPAddressinRange
 				            IF ($PSBoundParameters['Protocol']){
 					            SWITCH ($protocol) {
 						            "WSMAN" {
-							            Write-Verbose -Message "Get-OSInfo : $IP.ComputerName - Trying to connect via WSMAN protocol"
-							            IF ((Test-WSMan -ComputerName $IP.ComputerName -ErrorAction Stop -ErrorVariable ProcessErrorTestWsMan).productversion -match 'Stack: 3.0') {
-								            Write-Verbose -Message "Get-OSInfo : $IP.ComputerName - WSMAN is responsive"
+							            Write-Verbose -Message "Get-OSInfo : $($IP.ComputerName) - Trying to connect via WSMAN protocol"
+							            IF ((Test-WSMan -ComputerName $($IP.ComputerName) -ErrorAction Stop -ErrorVariable ProcessErrorTestWsMan).productversion -match 'Stack: 3.0') {
+								            Write-Verbose -Message "Get-OSInfo : $($IP.ComputerName) - WSMAN is responsive"
 		            			            $CimSession = New-CimSession @CIMSessionParams
 		            			            $CimProtocol = $CimSession.protocol
-		            			            Write-Verbose -message "Get-OSInfo : $IP.ComputerName - [$CimProtocol] CIM SESSION - Opened"
+		            			            Write-Verbose -message "Get-OSInfo : $($IP.ComputerName) - [$CimProtocol] CIM SESSION - Opened"
 							            }
 						            }
 						            "DCOM" {
-							            Write-Verbose -Message "Get-OSInfo : $IP.ComputerName - Trying to connect via DCOM protocol"
+							            Write-Verbose -Message "Get-OSInfo : $($IP.ComputerName) - Trying to connect via DCOM protocol"
 		            		            $CIMSessionParams.SessionOption = New-CimSessionOption -Protocol Dcom
 		            		            $CimSession = New-CimSession @CIMSessionParams
 		            		            $CimProtocol = $CimSession.protocol
-		            		            Write-Verbose -message "Get-OSInfo : $IP.ComputerName - [$CimProtocol] CIM SESSION - Opened"
+		            		            Write-Verbose -message "Get-OSInfo : $($IP.ComputerName) - [$CimProtocol] CIM SESSION - Opened"
 						            }
 					            }
 				            }
@@ -782,7 +784,7 @@ Function Get-IPAddressinRange
                             $Output.OS = $OSInfo.Caption
                             $Output.ServicePack = $OSInfo.CSDversion
 
-                            Write-Verbose -Message "Get-OSInfo : $IP.Computername - Output information"
+                            Write-Verbose -Message "Get-OSInfo : $($IP.ComputerName) - Output information"
                             [pscustomobject]$Output
                         }
                 
@@ -790,26 +792,26 @@ Function Get-IPAddressinRange
 				            IF ($ProcessErrorTestConnection)
                             {
                                 #Machine name resolves but Machine is offline
-                                Write-Warning -Message "Get-OSInfo : $IP.ComputerName - Can't Reach"
+                                Write-Warning -Message "Get-OSInfo : $($IP.ComputerName) - Can't Reach"
                                 $Output.Connectivity = "Offline"
                         
-                                Write-Verbose -Message "Get-OSInfo : $IP.Computername - Output information"
+                                Write-Verbose -Message "Get-OSInfo : $($IP.ComputerName) - Output information"
                                 [pscustomobject]$Output
                             }
 				            IF ($ProcessErrorCIM)
                             {
                                 #Machine name resolved and machine is online but Not able to Query it
-                                Write-Warning -Message "Get-OSInfo : $IP.ComputerName - Can't Connect - $protocol"
+                                Write-Warning -Message "Get-OSInfo : $($IP.ComputerName) - Can't Connect - $protocol"
                         
-                                Write-Verbose -Message "Get-OSInfo : $IP.Computername - Output information"
+                                Write-Verbose -Message "Get-OSInfo : $($IP.ComputerName) - Output information"
                                 [pscustomobject]$Output
                             }
-				            IF ($ProcessErrorTestWsMan){Write-Warning -Message "Get-OSInfo : $IP.ComputerName - Can't Connect - $protocol"}
-				            #IF ($ProcessErrorExportCLIXML){Write-Warning -Message "$IP.ComputerName - Can't Export the XML file $fileformat in $Path"}
+				            IF ($ProcessErrorTestWsMan){Write-Warning -Message "Get-OSInfo : $($IP.ComputerName) - Can't Connect - $protocol"}
+				            
 			            }#CATCH Block
 			
 			            FINALLY{
-				            Write-Verbose "Get-OSInfo : Removing CIM 3.0 Session from $IP.ComputerName"
+				            Write-Verbose "Get-OSInfo : Removing CIM 3.0 Session from $($IP.ComputerName)"
                             IF ($CimSession) {Remove-CimSession $CimSession}
 			            }#FINALLY Block
 
