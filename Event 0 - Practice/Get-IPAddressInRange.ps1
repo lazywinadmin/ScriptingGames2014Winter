@@ -843,8 +843,8 @@ Function Get-IPAddressinRange
         {
             #User needs OSInfo
             Write-Verbose -Message "Get-IPAddressinRange : OSInfo Switch specified....OS & SP info will be returned"
-            $PSBoundParameters.Remove("OSinfo")
-            $PSBoundParameters.Remove("ThrottleLimit")
+            $PSBoundParameters.Remove("OSinfo") | Out-Null
+            $PSBoundParameters.Remove("ThrottleLimit") | Out-Null
             Get-ValidIPAddressinRange @PSBoundParameters | Split-Job -Scriptblock {Get-OSInfo } -Function Get-OSInfo -MaxPipelines $ThrottleLimit
 
         }
