@@ -90,7 +90,7 @@ function Get-ComputerInventory {
 		Team: POSH Monks
 #>
 
-	[CmdletBinding()]
+	[CmdletBinding(DefaultParameterSetName="AllInformation")]
 	PARAM(
 		[Alias("__SERVER","CN","ServerName")]
 		[Parameter(

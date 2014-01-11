@@ -1,5 +1,3 @@
-
-Import-Module PKI
 function Get-Inventory {
 	<#
 	.SYNOPSIS
@@ -79,6 +77,8 @@ function Get-Inventory {
             
              })]
         [string]$Mask,
+	
+		[Switch]$OSInfo,
 		
 		[Alias("ExportPath","Export","Directory")]
 		[string]$Path=$(Get-ScriptDirectory),
@@ -159,40 +159,72 @@ function Get-Inventory {
 	PROCESS {
 		TRY {
 			#Splatting Params
-			$ScanParams = $PSBoundParamater.remove("IP","Mask","Report")
-			$ComputerInventoryParams = $PSBoundParamater.remove("IP","Mask","ReportCSV","ReportHTML","ReportPowerPoint","Title","Subtitle")
-			$ReportingParams = $PSBoundParamater.remove("IP","Mask","Credential","Protocol","AllInformation","HardwareInformation","LastPatchInstalled","LastReboot","ApplicationsInstalled","WindowsComponents")
+			$ScanParams = $PSBoundParamaters
+			$ScanParams.remove("IP")
+			$ScanParams.remove("Mask")
+			$ScanParams.remove("ReportCSV")
+			$ScanParams.remove("ReportHTML")
+			$ScanParams.remove("ReportPowerPoint")
+			$ScanParams.remove("Title")
+			$ScanParams.remove("SubTitle")
+			$ScanParams.remove("Credential")
+			$ScanParams.remove("Protocol")
+			$ScanParams.remove("AllInformation")
+			$ScanParams.remove("HardwareInformation")
+			$ScanParams.remove("LastPatchInstalled")
+			$ScanParams.remove("LastReboot")
+			$ScanParams.remove("ApplicationsInstalled")
+			$ScanParams.remove("WindowsComponents")
+			
+			$ComputerInventoryParams = $PSBoundParameters
+			$ComputerInventoryParams.remove("IP")
+			$ComputerInventoryParams.remove("Mask")
+			$ComputerInventoryParams.remove("OSInfo")
+			$ComputerInventoryParams.remove("ReportCSV")
+			$ComputerInventoryParams.remove("ReportHTML")
+			$ComputerInventoryParams.remove("ReportPowerPoint")
+			$ComputerInventoryParams.remove("Title")
+			$ComputerInventoryParams.remove("Subtitle")
+			
+			$ReportingParams = $PSBoundParamaters
+			$ReportingParams.remove("IP")
+			$ReportingParams.remove("Mask")
+			$ReportingParams.remove("OSInfo")
+			$ReportingParams.remove("Credential")
+			$ReportingParams.remove("Protocol")
+			$ReportingParams.remove("AllInformation")
+			$ReportingParams.remove("HardwareInformation")
+			$ReportingParams.remove("LastPatchInstalled")
+			$ReportingParams.remove("LastReboot")
+			$ReportingParams.remove("ApplicationsInstalled")
+			$ReportingParams.remove("WindowsComponents")
 			
 			#IP SCAN
 			IF ($PSBoundParamater["IP"] -and $PSBoundParamater["Mask"]){
-				$IPScan = Split-Job -ScriptBlock {Get-IpAddressInRange @ScanParams} -Function Get-IpAddressInRange
+				$IPScan = Get-IpAddressInRange @ScanParams
 				#FileName for export
 				$IP -replace "/","_"
 				$ScanFileFormat = "SCAN-$IP_$Mask-$DateFormat.csv"
-				
-				
 			}
 			IF ($PSBoundParamater["IP"] -and (-not($PSBoundParamater["Mask"]))){
-				$IPScan = Split-Job -ScriptBlock {Get-IpAddressInRange @ScanParams} -Function Get-IpAddressInRange
-				
+				$IPScan = Get-IpAddressInRange @ScanParams
 				#FileName for export
 				$IP -replace "/","_"
 				$ScanFileFormat = "SCAN-$IP-$DateFormat.csv"
 			}
 			
 			# Export IP Scan
-			
 			$IPScan | Export-Csv -Path (Join-Path -Path $Path -ChildPath $ScanFileName)
 			
 			# Gather information
 			Split-Job -ScriptBlock {Get-ComputerInventory -ComputerName $IPScan.ComputerName @ComputerInventoryParams} -function Get-ComputerInventory
 			
 			# Reporting
-			IF ($ReportCSV -or $ReportHTML -or $ReportHTML)
-			{
+			IF ($ReportCSV -or $ReportHTML -or $ReportPowerPoint)
+			{	
+
 				New-Export @ReportingParams
 			}
-			
 		}
 		CATCH {
 			Write-Warning -Message "PROCESS Block - Error"
