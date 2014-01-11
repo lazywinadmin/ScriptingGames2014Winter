@@ -36,6 +36,10 @@ function Get-ComputerInventory {
 		Specifies the protocol to use to establish the connection with the remote computer(s)
 		If not specified the script will try first with WSMAN then with DCOM
 	
+	.PARAMETER  AllInformation
+		Gather all information related to the computer
+		All information include: Hardware, Last Patch Installed, Last Reboot, Application Installed and Windows Components
+	
 	.PARAMETER  HardwareInformation
 		Gather information related to the Hardware
 	
@@ -50,6 +54,9 @@ function Get-ComputerInventory {
 	
 	.PARAMETER  WindowsComponents
 		Gather the Windows Features installed on the computer
+	
+	.PARAMETER  Credential
+		Specifies different credential to use
 
 	.EXAMPLE
 		Get-ComputerInventory -ComputerName LOCALHOST
@@ -83,8 +90,6 @@ function Get-ComputerInventory {
 		Event 0 - Practice Event
 		Title: Server Inventory
 		Team: POSH Monks
-		
-		This function will ...
 #>
 
 	[CmdletBinding()]
@@ -111,17 +116,31 @@ function Get-ComputerInventory {
 		[Parameter()]
 		[ValidateSet("WSMAN","DCOM")]
 		[String]$Protocol,
+	
+		[Parameter(
+			ParameterSetName="AllInformation")]
+		[Switch]$AllInformation,
 		
+		[Parameter(
+			ParameterSetName="Information")]
 		[Switch]$HardwareInformation,
 		
+		[Parameter(
+			ParameterSetName="Information")]
 		[Switch]$LastPatchInstalled,
 	
+		[Parameter(
+			ParameterSetName="Information")]
 		[Switch]$LastReboot,
-	
+		
+		[Parameter(
+			ParameterSetName="Information")]
 		[Switch]$ApplicationsInstalled,
 	
+		[Parameter(
+			ParameterSetName="Information")]
 		[Switch]$WindowsComponents
-	)
+	)#PARAM
 	
 	BEGIN {
 		TRY {
@@ -203,6 +222,15 @@ function Get-ComputerInventory {
 					Connectivity = 'Online'
 				}
 		
+				# AllInformation Switch Parameter
+				IF ($AllInformation){
+					$HardwareInformation = $true
+					$ApplicationsInstalled = $true
+					$LastPatchInstalled = $true
+					$LastReboot = $true
+					$WindowsComponents = $true
+				}
+				
 				# HardwareInformation Switch Parameter
 				IF ($HardwareInformation) {
 					Write-Verbose -Message "$Computer - Gather Hardware Information"	
