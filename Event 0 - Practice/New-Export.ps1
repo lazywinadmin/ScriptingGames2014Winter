@@ -1,12 +1,10 @@
-<#
-# Generate Charts
-	$Output = New-Chart -Computers $computers -Path "c:\ps" -Roles -OS -Hardware
-#Export PowerPoint
-	New-Export -Path "c:\ps\" -ExportHTML -title $Title -Subtitle $SubTitle -ArrayImage $output -Data $computers
-#Export Html
-	New-export -Path "c:\ps\" -Exportype "html" -title $Title -Subtitle $SubTitle -Data $computers -ArrayImage $Output
-#>
-
+#========================================================================
+# 
+# Created on:   1/5/2014 1:08 PM
+# Created by:   Administrator
+# Organization: 
+# Filename:     
+#========================================================================
 
 Function New-Chart {
 <#
@@ -171,7 +169,7 @@ Function New-Chart {
 			#--- Code: Nested array (Object property name, Chart title, X Axis label)
 			if ($Hardware) {
 				$properties += @(
-					New-Object PSObject -Property @{PropertyName = "CPU"; ChartTitle = "CPU Sockets Found"; TitleXAxis = "CPU Sockets"}
+					New-Object PSObject -Property @{PropertyName = "NumberOfProcessors"; ChartTitle = "CPU Sockets Found"; TitleXAxis = "CPU Sockets"}
 					New-Object PSObject -Property @{PropertyName = "MemoryGB"; ChartTitle = "Memory Found"; TitleXAxis = "Memory (GB)"}
 					New-Object PSObject -Property @{PropertyName = "Manufacturer"; ChartTitle = "Manufacturer Found"; TitleXAxis = "Manufacturer Name"}
 					New-Object PSObject -Property @{PropertyName = "Model"; ChartTitle = "Model Found"; TitleXAxis = "Model Name"}
@@ -294,8 +292,8 @@ function Export-PowerPoint {
 	Param(
 		[Parameter(mandatory=$true)]$Path = $(throw "Path is mandatory, please provide a value."),
 		[Parameter(mandatory=$true)]$GraphInfos,
-		[Parameter(mandatory=$false)]$title,
-		[Parameter(mandatory=$false)]$Subtitle
+		[Parameter(mandatory=$false)]$title="Inventory Report",
+		[Parameter(mandatory=$false)]$Subtitle="Team: POSH Monks\n Winter Scripting Games 2014 - Event:00 (Practice)"
 	)
 
 	Begin {
@@ -389,8 +387,8 @@ Function Export-Html {
 		[Parameter(mandatory=$true)]$Path = $(throw "Path is mandatory, please provide a value."),
 		[Parameter(mandatory=$false)]$GraphInfos,
 		[Parameter(mandatory=$false)]$Data,
-		[Parameter(mandatory=$false)]$title,
-		[Parameter(mandatory=$false)]$Subtitle
+		[Parameter(mandatory=$false)]$title="Inventory Report",
+		[Parameter(mandatory=$false)]$Subtitle="Team: POSH Monks\n Winter Scripting Games 2014 - Event:00 (Practice)"
 	)
 	
 	Begin{
@@ -631,18 +629,17 @@ function New-Export {
 		[Parameter(mandatory=$true, ParameterSetName="HTML")]
 		$ArrayImage,
 		
-		[Parameter(mandatory=$true, ParameterSetName="PPT")]
-		[Parameter(mandatory=$true, ParameterSetName="HTML")]
+		[Parameter(mandatory=$false, ParameterSetName="PPT")]
+		[Parameter(mandatory=$false, ParameterSetName="HTML")]
 		$title,
 		
-		[Parameter(mandatory=$true, ParameterSetName="PPT")]
-		[Parameter(mandatory=$true, ParameterSetName="HTML")]
+		[Parameter(mandatory=$false, ParameterSetName="PPT")]
+		[Parameter(mandatory=$false, ParameterSetName="HTML")]
 		$Subtitle
 	)
-	BEGIN {
-		$now = Get-Date -Format "yyyyMMdd_HHmmss"
-	}
-	PROCESS{
+	Begin {
+		$now = (Get-Date).ToString("yyyyMMdd_HHmmss")
+		
 		if ($ExportCSV) {
 			$FileName = "Export-$($now).csv"
 			$ExportPath = Join-Path -Path $Path -ChildPath $FileName
@@ -663,11 +660,66 @@ function New-Export {
 			Write-Verbose "exporting the file to $($exportPath)"	
 			Export-PowerPoint -title $Title -Subtitle $SubTitle -Path $ExportPath -GraphInfos $ArrayImage
 		}
-		
-	}#PROCESS
-	END {
-		FOREACH ($output in $ArrayImage) {
-			Remove-Item $output.Path | Out-Null
+	}
+	Process { }
+	End {
+		Foreach ($output in $ArrayImage) {
+			Remove-Item $output.Path
 		}
 	}
 }
+
+########Testing#############
+
+$cp1 = New-Object PSObject -Property @{
+        ComputerName                = "SRV001"
+        IISInstalled                = $true
+        SQLInstalled                = $true
+        ExchangeInstalled        = $false
+        SharepointInstalled        = $false
+        CPU                                = 4
+        MemoryGB                = 6
+        Manufacturer        = "Allister Fisto Industries"
+        Model                        = "Fistron 2000"
+        ServicePack                = "Microsoft Windows Server 2008 R2 Enterprise"
+		OS = ""
+}
+
+$cp2 = New-Object PSObject -Property @{
+        ComputerName                = "SRV002"
+        IISInstalled                = $true
+        SQLInstalled                = $true
+        ExchangeInstalled        = $false
+        SharepointInstalled        = $true
+        CPU                                = 2
+        MemoryGB                = 2
+        Manufacturer        = "Allister Fisto Industries"
+        Model                        = "Fistron 3000"
+        ServicePack                = "Microsoft Windows Server 2008 R2 Standard"
+}
+
+$cp3 = New-Object PSObject -Property @{
+        ComputerName                = "SRV003"
+        IISInstalled                = $false
+        SQLInstalled                = $false
+        ExchangeInstalled        = $true
+        SharepointInstalled        = $false
+        CPU                                = 4
+        MemoryGB                = 8
+        Manufacturer        = "Allister Fisto Industries"
+        Model                        = "Fistron 2000"
+        ServicePack                = "Microsoft Windows Server 2008 Standard"
+}
+
+$computers = @($cp1, $cp2, $cp3)
+
+######ENDTESTING#####################
+
+# $Title  = "Inventory Report"
+# $SubTitle = "Team: POSH Monks\n Winter Scripting Games 2014 - Event:00 (Practice)"
+
+# $Output = New-Chart -Computers $computers -Path "c:\ps" -Roles -OS -Hardware
+#Export powerpoint
+	# New-export -Path "c:\ps\" -ExportHTML -title $Title -Subtitle $SubTitle -ArrayImage $output -Data $computers
+#Export Html
+	# New-export -Path "c:\ps\" -Exportype "html" -title $Title -Subtitle $SubTitle -Data $computers -ArrayImage $Output
