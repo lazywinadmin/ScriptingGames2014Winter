@@ -1,0 +1,16 @@
+Event 1 - Pairs
+========================
+
+Workflow
+-------
+
+This file must define how the script will work
+* how many functions ?
+* module ?
+* script ps1
+* properties
+* parameters
+* what should be input
+* what should be output
+* which features to use ?
+* other additional options
