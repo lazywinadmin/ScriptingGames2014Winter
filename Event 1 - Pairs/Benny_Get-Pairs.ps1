@@ -41,20 +41,16 @@ Function Get-Pairs {
 			return
 		}
 		
-		$Modulo = $Pairs.Count % 2
-		$PairsAreOdd = $false
-		
 		# First we check if the Pairs count is odd or not
-		If ($Modulo -ne 0) {
-			Write-Warning -Message "The Pairing is odd, a person will be assigned two buddies"
-			$PairsAreOdd = $true
+		If (($Pairs.Count % 2) -ne 0) {
+			Write-Warning -Message "The Pairing is odd"
 		}
 		
 		# Next, we check if a secret pal was specified or not
 		$SpecialPal = ""
 		If ($PSBoundParameters.ContainsKey('OddPal')) {
 			$SpecialPal = $PSCmdlet.MyInvocation.BoundParameters['OddPal']
-			Write-Verbose -Message "$SecretPal will have two secret pals!"
+			Write-Verbose -Message "$SpecialPal will have two secret pals!"
 		}
 	}
 	
