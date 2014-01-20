@@ -1,4 +1,5 @@
 ﻿function Get-Pair{
+    [CmdletBinding()]
 	PARAM(
 		[Parameter(Mandatory,HelpMessage="You need to specify a list of participants")]
 		[System.Collections.ArrayList]$List,
@@ -38,25 +39,31 @@
 		    }#ForEach-Object
 
         IF ($Remainder){
-            Write-Warning -Message "You have $($Remainder.count) left: $list"
-            FOREACH ($remain in $Remainder){
-                # Creating Array
-                $Output = @{}
+            # Define how many I need for my new pair
+            $PersonToSelect = $numberPerPair - $Remainder
+            Write-Warning -Message "You have $Remainder left: $list"
+            Write-Verbose -Message "You need to select $PersonToSelect person(s) to have a full pair"
+            
+            # Creating Array
+            $Output = @{}
+            
+            # Add info to output variable
+            $Output.PairNumber = [int]$Quotient + 1
+            $Output.Pair = $list
 
-                # Ask the user to select a person
-                $PersonSecretPal = Read-Host -Prompt "Enter the name of the person to have $numberPerPair pals"
-                $LeftBehind = Get-Random -Count $NumberPerPair -InputObject $List
+            # Prompt the user for name(s) to have a full pair
+            While ($PersonToSelect -ne 0){
+                $Person = Read-Host -Prompt "Enter the name of the person to add in the new pair"
                 
-                # Add info to output variable
-                $output.PairNumber = [int]$Quotient + 1
-                $output.Pair = $PersonSecretPal,$LeftBehind
+                # Add the name entered in the Pair
+                $output.Pair += $Person
 
-                # Remove the entries selected by Get-Random
-                $LeftBehind | ForEach-Object {$List.Remove($_)}
+                # Decrease the value of $PersonToSelect
+                $PersonToSelect--
+            }
 
-                # Creating PSobject and outputting the data
-                New-Object -TypeName PSObject -Property $output
-            }#FOREACH ($remain in $Remainder)
+            # Creating PSobject and outputting the data
+            New-Object -TypeName PSObject -Property $output
         }#IF ($Remainder){
 	}#PROCESS block
 	END{}#END block
@@ -84,4 +91,4 @@ function Get-ProjectPair{
 }
 
 
-Get-Pair -NumberPerPair 2 -List "Syed","Kim","Sam","Hazem","Pilar","Terry","Amy","Greg","Pamela","Julie","David","Robert","Shai","Ann","Mason","Sharon"
+Get-Pair -NumberPerPair 4 -List "Syed","Kim","Sam","Hazem","Pilar","Terry","Amy","Greg","Pamela","Julie","David","Robert","Shai","Ann","Mason","Sharon","xavier","dexter"
