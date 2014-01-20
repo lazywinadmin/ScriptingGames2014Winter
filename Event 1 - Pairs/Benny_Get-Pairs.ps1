@@ -6,7 +6,11 @@ Function Get-Pairs {
 		[Parameter(
 			Mandatory=$true,
 			Position=0)]
-		$Pairs
+		[Array]$Pairs,
+		
+		[ValidateScript(
+			{Test-Path -path $_})]
+		[String]$Path
 	)
 	DynamicParam {
 		# We add the secret pals parameter if our pairs are odd
@@ -15,7 +19,6 @@ Function Get-Pairs {
 			$Parameter = New-Object System.Management.Automation.ParameterAttribute
 			$Parameter.ParameterSetName = '__AllParameterSets'
 			$Parameter.ValueFromRemainingArguments = $true
-			$Parameter.Position = 1
 			$Parameter.Mandatory = $false
 			
 			# The special pal's name need to be among the pair names
@@ -52,6 +55,8 @@ Function Get-Pairs {
 			$SpecialPal = $PSCmdlet.MyInvocation.BoundParameters['OddPal']
 			Write-Verbose -Message "$SpecialPal will have two secret pals!"
 		}
+		
+		$Output = @()
 	}
 	
 	PROCESS {
@@ -71,7 +76,7 @@ Function Get-Pairs {
 				Pal = $Pairs[$i+1]
 			}
 			
-			Write-Output $pair
+			$Output += $pair
 		}
 		
 		# Our special pal is set?
@@ -81,11 +86,18 @@ Function Get-Pairs {
 				Pal = $Pairs | Get-Random -Count 2
 			}
 			
-			Write-Output $pair
+			$Output += $pair
 		}
 	}
 	
-	END { }
+	END {
+		If ($PSBoundParameters.ContainsKey('Path')) {
+			$Now = Get-Date -Format "yyyyMMdd_HHmmss"
+			$Output | Export-CliXML -Path "$($Path)\Export-Pairs_$($Now).xml"
+		}
+		
+		return $Output
+	}
 }
 
-Get-Pairs -Pairs $names -OddPal "Ann" -Verbose
+Get-Pairs -Pairs $names -Path "c:\ps\" -OddPal "Ann" -Verbose
