@@ -1,5 +1,3 @@
-[array]$names = "Syed", "Kim", "Sam", "Hazem", "Pilar", "Terry", "Amy", "Greg", "Pamela", "Julie", "David", "Robert", "Shai", "Ann", "Mason", "Sharon", "Jil"
-
 Function Get-Pairs {
 	[cmdletbinding()]
 	Param(
@@ -12,58 +10,44 @@ Function Get-Pairs {
 			{Test-Path -path $_})]
 		[String]$Path
 	)
-	DynamicParam {
-		# We add the secret pals parameter if our pairs are odd
-		if ($Pairs.Count % 2 -ne 0) {
-			# We create the parameter attribute
-			$Parameter = New-Object System.Management.Automation.ParameterAttribute
-			$Parameter.ParameterSetName = '__AllParameterSets'
-			$Parameter.ValueFromRemainingArguments = $true
-			$Parameter.Mandatory = $false
-			
-			# The special pal's name need to be among the pair names
-			$ParameterOption = New-Object System.Management.Automation.ValidateSetAttribute($Pairs)
-			
-			# We create the parameter itself
-			$DefaultParam = New-Object System.Management.Automation.RuntimeDefinedParameter
-			$DefaultParam.Name = 'OddPal'
-			$DefaultParam.ParameterType = 'String'
-			$DefaultParam.Attributes.Add($Parameter)
-			$DefaultParam.Attributes.Add($ParameterOption)
-			
-			# We add the parameter to the Dictionnary
-			$Dictionnary = New-Object Management.Automation.RuntimeDefinedParameterDictionary
-			$Dictionnary.Add('OddPal', $DefaultParam)
-			$Dictionnary
-		}
-	}
 	
 	BEGIN {
+		$SpecialPal = ""
 		If ($Pairs.Count -lt 2) {
 			Write-Error -Message "How do you want to make pairs with less than 2 persons?!"
 			return
 		}
 		
-		# First we check if the Pairs count is odd or not
+		# First we check If the Pairs count is odd or not
 		If (($Pairs.Count % 2) -ne 0) {
 			Write-Warning -Message "The Pairing is odd"
-		}
-		
-		# Next, we check if a secret pal was specified or not
-		$SpecialPal = ""
-		If ($PSBoundParameters.ContainsKey('OddPal')) {
-			$SpecialPal = $PSCmdlet.MyInvocation.BoundParameters['OddPal']
-			Write-Verbose -Message "$SpecialPal will have two secret pals!"
+			
+			while ($true) {
+				$SpecialPal = Read-Host "who will have TWO secret pals?"
+				
+				If ($SpecialPal -eq "") { break; }
+				If ($Pairs -contains $SpecialPal) {
+					break
+				} else {
+					Write-Warning -Message "$SpecialPal is not present among the pairs"	
+				}
+			}
+			
+			If ($SpecialPal -eq "") {
+				Write-Warning -Message "There is no special pal specIfied!"	
+			}
 		}
 		
 		$Output = @()
 	}
 	
 	PROCESS {
-		# If a special pal is specified, then we remove him from the pair's array
-		if ($SpecialPal -ne "") {
+		# If a special pal is specIfied, then we remove him from the pair's array
+		If ($SpecialPal -ne "") {
 			# Here we don't bother with mutliple identical values since we're dealing with names, bob and bob would probably be hard to distinguish!
 			$Pairs = $Pairs | Where-Object {$_ -ne $SpecialPal}
+			
+			Write-Verbose -Message "$SpecialPal Will have two secret pals"
 		}
 		
 		# Mix it a bit by default, some people may be bored to have the same pal all the time :D
@@ -80,7 +64,7 @@ Function Get-Pairs {
 		}
 		
 		# Our special pal is set?
-		if ($SpecialPal -ne "") {
+		If ($SpecialPal -ne "") {
 			$pair = New-Object PSObject -Property @{
 				Person = $SpecialPal
 				Pal = $Pairs | Get-Random -Count 2
@@ -91,6 +75,7 @@ Function Get-Pairs {
 	}
 	
 	END {
+		# Finally, we may want to export it heh
 		If ($PSBoundParameters.ContainsKey('Path')) {
 			$Now = Get-Date -Format "yyyyMMdd_HHmmss"
 			$Output | Export-CliXML -Path "$($Path)\Export-Pairs_$($Now).xml"
@@ -100,4 +85,155 @@ Function Get-Pairs {
 	}
 }
 
-Get-Pairs -Pairs $names -Path "c:\ps\" -OddPal "Ann" -Verbose
+Function Get-PairsWithHistory {
+	[cmdletbinding()]
+	Param(
+		[Parameter(
+			Mandatory=$true,
+			Position=0)]
+		[Array]$Pairs,
+	
+		[ValidateScript(
+			{Test-Path -path $_})]
+		[Parameter(
+			Mandatory=$true,
+			Position=1)]
+		[String]$Path,
+		
+		[Int]$MaxAssignment = 4
+	)
+	
+	BEGIN {
+		
+		$History = Import-Clixml -Path $Path
+		
+		$Output = @()
+		$Processed = @()
+	}
+	
+	PROCESS {
+		ForEach ($Person in $History) {
+			$Who = $Person.Person
+			$Previous = $Person.Previous
+			
+			if ($Processed -notcontains $Who) {
+				if ($Previous.Count -ge $MaxAssignment) {
+					# Trim the begining of the array!
+					$Previous = $Previous | Where-Object {$_ -ne $Previous[0]}
+					$Person.Previous = $Previous
+				}
+				
+				$Eligible = $Pairs | Where-Object {$_ -ne $Who}
+				
+				ForEach ($Candidate in $Eligible) {
+					if (($Previous -notcontains $Candidate) -and ($Processed -notcontains $Candidate)) {
+						$Output += New-Object PSObject -Property @{
+							Person = $Who
+							Pal = $Candidate
+						}
+						
+						$Processed += $Who, $Candidate
+						$Person.Previous += $Candidate
+						
+						# Reverse Update
+						$Pal = $History | Where-Object {$_.Person -eq $Candidate}
+						
+						$PalPrevious = $Pal.Previous
+						if ($PalPrevious.Count -ge $MaxAssignment) {
+							$PalPrevious = $PalPrevious | Where-Object {$_ -ne $PalPrevious[0]}
+							$Pal.Previous = $PalPrevious
+						}
+						
+						$Pal.Previous += $Who
+						break
+					}
+				}
+			}
+		}
+	}
+	
+	END {
+		$History | Export-Clixml -Path $Path
+		return $Output
+	}
+}
+
+Function Get-DevPairs {
+	[cmdletbinding()]
+	Param(
+		[Parameter(
+			Mandatory=$true,
+			Position=0)]
+		[Array]$List,
+		
+		# We consider that primaries are people specIfied within the list -> "They should never pair with another primary"
+		[ValidateCount(0,5)]	
+		[Parameter(
+			Mandatory=$true,
+			Position=1)]
+		[Array]$Primaries,
+	
+		[ValidateScript(
+			{Test-Path -path $_})]
+		[Parameter(
+			Mandatory=$true)]
+		[String]$Path
+	)
+	
+	BEGIN {
+		$Candidates = $List | Where-Object {$Primaries -notcontains $_}
+		$Candidates = $Candidates | Get-Random -Count $Candidates.Count
+		
+		# Pre, we check get/create the history XML
+		If (Test-Path -Path "$path\ProjectPairs-History.xml") {
+			# Exists, we check the content to prevent identical assignments
+			
+			$Pairs = Get-PairsWithHistory -Pairs $Candidates -Path "$path\ProjectPairs-History.xml" -Verbose
+		} else {
+			# First run, we create it
+			Write-Verbose -Message "Creating ProjectPairs-History.xml to track the previous assignments"
+			
+			[array]$history = @()
+			Foreach ($Candidate in $Candidates) {
+				$history += New-Object PSObject -Property @{
+					Person = $Candidate
+					Previous = @()
+				}
+			}
+			
+			$history | Export-Clixml -Path "$path\ProjectPairs-History.xml"
+			
+			
+			$Pairs = Get-PairsWithHistory -Pairs $Candidates -Path "$path\ProjectPairs-History.xml" -Verbose
+		}
+	}
+	
+	PROCESS {
+		# We assign the primaries
+		If ($Primaries.count -gt 0) {
+			Write-Verbose -Message "Assigning Primaries to pairs"
+			$i = 0
+			ForEach ($Pair in $Pairs) {
+				If ($i -lt $Primaries.Count) {
+					$Primary = $Primaries[$i]
+					$Pair | Add-Member -MemberType NoteProperty -Name Primary -Value $Primary
+					$i++
+				} else {
+					break;
+				}
+			}
+		}
+		
+		# Post, we update the history xml
+	}
+	
+	END {
+		return $Pairs
+	}
+}
+
+[array]$names = "Syed", "Kim", "Sam", "Hazem", "Pilar", "Terry", "Amy", "Greg", "Pamela", "Julie", "David", "Robert", "Shai", "Ann", "Mason", "Sharon"
+[array]$primaries = "Syed", "Terry", "David", "Sharon"
+
+Get-DevPairs -List $names -Primaries $primaries -Path "c:\ps"
+#Get-Pairs -Pairs $names -Path "c:\ps\" -Verbose
