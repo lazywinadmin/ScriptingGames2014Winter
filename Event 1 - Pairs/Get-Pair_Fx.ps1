@@ -1,10 +1,24 @@
-﻿function Get-Pair{
+﻿#requires -version 3
+
+function Get-Pair{
     [CmdletBinding()]
 	PARAM(
-		[Parameter(Mandatory,HelpMessage="You need to specify a list of participants")]
+		[Parameter(
+			Mandatory,
+			HelpMessage="You need to specify a list of participants",
+			Position = "1",
+			ValueFromPipeline,
+			ValueFromPipelineByPropertyName)]
 		[System.Collections.ArrayList]$List,
-        [Parameter(Mandatory)]
-		$NumberPerPair,
+	
+        [Parameter(
+			Mandatory,
+			HelpMessage="You need to specify a number of person per pair")]
+		#[ValidateScript({
+		#	IF(-not($_ -gt 1)){
+		#		throw "ERROR - You need at least 2 person per pair !"}})]
+		[int]$NumberPerPair,
+	
 		[ValidateScript({Test-Path -Path $_})]
 		$Path
 	)
@@ -15,7 +29,10 @@
 		$DateFormat = Get-Date -Format "yyyyMMdd_hhmmss"
 		
 		# Odd Number
-		IF($Remainder){Write-Warning -Message "An Odd number of participants was specified, You will be ask to assign the remaining persons with differents Pals"}
+		IF($Remainder){Write-Warning -Message "An Odd number of participants was specified, You will be ask to pick someone who is already in pair so the script can create a new pair with the remaining person(s)"}
+		
+		# Export Variable
+		$Export=@()
 		
 	}#BEGIN block
 	PROCESS{
@@ -35,7 +52,11 @@
                 $Pairs | ForEach-Object {$List.Remove($_)}
 
                 # Creating PSobject and outputting the data
-                New-Object -TypeName PSObject -Property $output
+                $Output = New-Object -TypeName PSObject -Property $output
+				Write-Output -InputObject $Output
+				
+				# Export
+				IF($Path){$Export += $Output}
 		    }#ForEach-Object
 
         IF ($Remainder){
@@ -63,14 +84,18 @@
             }
 
             # Creating PSobject and outputting the data
-            New-Object -TypeName PSObject -Property $output
+            $Output = New-Object -TypeName PSObject -Property $output
+			Write-Output -InputObject $Output
+			
+			# Export
+			IF($Path){$Export += $Output}
         }#IF ($Remainder){
 	}#PROCESS block
 	END{
 		IF($Path){
 			TRY{
 				Write-Verbose -Message "Exporting Data to $Path"
-				Export-Clixml -Path (Join-Path -Path $Path -ChildPath "Pair_Export-$DateFormat.xml") -ErrorAction 'Continue' -ErrorVariable EndErrorExportClixml
+				Export-Clixml -InputObject $Export -Path (Join-Path -Path $Path -ChildPath "Pair_Export-$DateFormat.xml") -ErrorAction 'Continue' -ErrorVariable EndErrorExportClixml
 			}CATCH{
 				Write-Warning -Message "END Block - Something wrong happened !"	
 				IF($EndErrorExportClixml){Write-Warning -Message "END Block - Error while exporting the data in a XML file"}
@@ -95,32 +120,72 @@ function Get-PairProject{
 		[int]$Cycle = 4
 	)	
 	BEGIN{
-		TRY{
-        	[System.Collections.ArrayList]$Pairs = Get-Pair -List $List -NumberPerPair $NumberPerPair -ErrorAction Stop -ErrorVariable BeginErrorGetPair
-		
-			IF ($History){
-				function Get-PairProjectHistory {
+		function Get-PairProjectHistory {
 					[CmdletBinding()]	
 					PARAM(
 						[ValidateScript({Test-Path -Path $_})]
-						$Path
+						$Path,
+						$Cycle
 					)
 					BEGIN{}
 					PROCESS{
-						Get-ChildItem -Path $path
-						#PairProject_Export-$DateFormat.xml
+						$XMLFile 	= Get-ChildItem "PairProject_Export-*.xml" -Path $path -File
+						$Files 		= $XMLFile | Sort-Object -Property LastWriteTime -Descending | Select-Object -first $cycle
+						[pscustomobject]$info = $Files | Import-Clixml
+						
+						# Create HashTable
+				
+						#Create a hashtable for each name
+						FOREACH ($name in $info.pair){
+								@{Name=$name;Previous=""} | Set-variable $name
 						}
+
+						# Process each XML file
+						0..($files.count-1) |
+							ForEach-Object {
+								$FileNo = $_
+								
+								#Group of Pairs (within the file)
+								0..($info[$_].count-1) | 
+									ForEach-Object {
+										$PairNo = $_
+										
+										# Pairs within the Group
+										Foreach ($item in $($info[$FileNo][$_].pair)){
+											#EACH MEMBER OF PAIR $info[$FileNo][$_].pair
+											(Get-Variable $item).value.Previous += @($info[$FileNo][$_].pair -notlike $item)
+											$PairNo++
+										}#Foreach ($item
+										$PairNo=0
+									}#1..$($info[$_].count)
+								$FileNo++
+						}#1..$files.count
+					}#PROCESS
 					END{Write-Verbose -Message "Get-PairProjectHistory - Script Completed"}
 				}#function Get-PairProjectHistory
+		
+		TRY{
+        	[System.Collections.ArrayList]$Pairs = Get-Pair -List $List -NumberPerPair $NumberPerPair -ErrorAction Stop -ErrorVariable BeginErrorGetPair
+			#Get-PairProjectHistory
+		
+			IF ($History){
+				
 			}#IF ($History)
+			
+			# Export Variable
 			$Export=@()
+			
 		}CATCH {
-			Write-Error -Message "BEGIN Block - Something wrong happened"
+			Write-Warning -Message "BEGIN Block - Something wrong happened"
 			IF($BeginErrorGetPair){Write-Warning -Message "BEGIN Block - Error while getting the pairs"}
+            $Error[0]
 		}
     }#BEGIN Block
     PROCESS{
 		TRY{
+			
+			#IF ($History){Get-Func}
+			
 	        IF ($PSBoundParameters["PrimaryList"]){
 	            IF ($PrimaryList.count -gt $Pairs.count){
 	                Write-Warning -Message "Too Much Primary specified, can assigned them all"
@@ -154,7 +219,8 @@ function Get-PairProject{
 	                            $Output = New-Object -TypeName PSObject -Property $output -ErrorAction Stop -ErrorVariable ProcessErrorNewObject 
 								Write-Output -InputObject $Output
 								
-								$Export += $Output
+								# Export
+								IF($Path){$Export += $Output}
 							
 							}#ForEach-Object
 						
@@ -166,8 +232,11 @@ function Get-PairProject{
 	            }#ELSE
 	        }#IF ($Primary)
 	        ELSE{
+				# Output $pair
 	        	Write-Output -InputObject $Pairs
-				$Export += $Pairs
+				
+				# Export
+				IF($Path){$Export += $Pairs}
 				
 	        }#ELSE
 			
@@ -176,24 +245,27 @@ function Get-PairProject{
 			IF($ProcessErrorPrimarySelected) {Write-Warning -Message "PROCESS BLOCK - Error while getting Random Primary"}
 			IF($ProcessErrorPairSelected) {Write-Warning -Message "PROCESS BLOCK - Error while getting Random Pair"}
 			IF($ProcessErrorNewObject) {Write-Warning -Message "PROCESS BLOCK - Error Outputting the variable '$output'"}
+            $Error[0]
 		}
     }#PROCESS Block
     END{
 		IF($Path){
 			TRY{
 				Write-Verbose -Message "END Block - Exporting Data to $Path"
-				Export-Clixml -InputObject $Export -Path (Join-Path -Path $Export -ChildPath "PairProject_Export-$DateFormat.xml") -ErrorAction 'Continue' -ErrorVariable EndErrorExportClixml
-				EndErrorExportClixml
-			}CATCH{
+				Export-Clixml -InputObject $Export -Path (Join-Path -Path $Path -ChildPath "PairProject_Export-$DateFormat.xml") -ErrorAction 'Continue' -ErrorVariable EndErrorExportClixml
 				
+			}CATCH{
+				Write-Warning -Message "END Block - Something Wrong happened"
+				IF ($EndErrorExportClixml){Write-Warning -Message "END Block - Error while exporting the data to $path"}
+                $error[0]
 			}
-			FINALLY {Write-Verbose -Message "END BLOCK - Data Exported"}
 		}#IF($Path)
 		Write-Verbose -Message "Get-ProjectPair - Script Completed"
 	}#END Block
 }
 
 
-Get-Pair -NumberPerPair 4 -List "Syed","Kim","Sam","Hazem","Pilar","Terry","Amy","Greg","Pamela","Julie","David","Robert","Shai","Ann","Mason","Sharon"
+#Get-Pair -NumberPerPair 4 -List "Syed","xavier","Kim","Sam","Hazem","Pilar","Terry","Amy","Greg","Pamela","Julie","David","Robert","Shai","Ann","Mason","Sharon" -Verbose -Path $Home\desktop
 
-Get-PairProject -NumberPerPair 2 -List "Syed","Kim","Sam","Hazem","Pilar","Terry","Amy","Greg","Pamela","Julie","David","Robert","Shai","Ann","Mason","Sharon","xavier","dexter" -PrimaryList "Vivian","Dominique" -Verbose
+
+Get-PairProject -NumberPerPair 2 -List "Syed","Kim","Sam","Hazem","Pilar","Terry","Amy","Greg","Pamela","Julie","David","Robert","Shai","Ann","Mason","Sharon","xavier","dexter" -PrimaryList "Vivian","Dominique" -Verbose -Path .
