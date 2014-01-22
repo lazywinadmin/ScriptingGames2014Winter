@@ -34,7 +34,7 @@ Function Get-Pairs {
 			}
 			
 			If ($SpecialPal -eq "") {
-				Write-Warning -Message "There is no special pal specIfied!"	
+				Write-Warning -Message "There is no special pal specified!"	
 			}
 		}
 		
@@ -119,6 +119,7 @@ Function Get-PairsWithHistory {
 			if ($Processed -notcontains $Who) {
 				if ($Previous.Count -ge $MaxAssignment) {
 					# Trim the begining of the array!
+					# TODO: trim up to $MaxAssignment, not just once.
 					$Previous = $Previous | Where-Object {$_ -ne $Previous[0]}
 					$Person.Previous = $Previous
 				}
@@ -177,7 +178,9 @@ Function Get-DevPairs {
 			{Test-Path -path $_})]
 		[Parameter(
 			Mandatory=$true)]
-		[String]$Path
+		[String]$Path,
+		
+		[switch]$Mailing
 	)
 	
 	BEGIN {
@@ -224,10 +227,23 @@ Function Get-DevPairs {
 			}
 		}
 		
-		# Post, we update the history xml
+#		If ($Mailing) {
+#			$message = new-object Net.Mail.MailMessage
+#			$smtp = new-object Net.Mail.SmtpClient("smtp.mycompany.com")
+#			
+#			$message.From = "pairing@powershellevent1.org"
+#			$message.To.Add("projectmanager@powershellevent1.org")
+#			$message.Subject = ("VMware Guest Disk Report: " + (get-date).toString("dd-MM-yyyy HH:mm:ss"))
+#			$message.IsBodyHTML = $true
+#			$message.Body = $echo
+#			
+#			$smtp.Send($message)
+#		}
 	}
 	
 	END {
+		$Now = Get-Date -Format "yyyyMMdd_HHmmss"
+		$Pairs | Export-CliXML -Path "$($Path)\Export-DevPairs_$($Now).xml"
 		return $Pairs
 	}
 }
