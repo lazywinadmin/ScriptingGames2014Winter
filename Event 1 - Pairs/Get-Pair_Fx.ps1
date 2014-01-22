@@ -121,7 +121,7 @@ function Get-ProjectPair{
   
 
                     Write-Verbose -Message "Output the rest of $pairs"
-                    Write-output $pairs | Where-Object {$($_.Pair.count) -eq $NumberPerPair}
+                    Write-output $pairs
                 } #WHILE ($Primary.count -ne 0)
             }#ELSE
         }#IF ($Primary)
