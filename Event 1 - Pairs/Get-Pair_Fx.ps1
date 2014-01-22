@@ -66,11 +66,20 @@
             New-Object -TypeName PSObject -Property $output
         }#IF ($Remainder){
 	}#PROCESS block
-	END{}#END block
-}
+	END{
+		IF($Path){
+			TRY{
+				Write-Verbose -Message "Exporting Data to $Path"
+				Export-Clixml -Path (Join-Path -Path $Path -ChildPath "Pair_Export-$DateFormat.xml") -ErrorAction 'Continue' -ErrorVariable EndErrorExportClixml
+			}CATCH{
+				Write-Warning -Message "END Block - Something wrong happened !"	
+				IF($EndErrorExportClixml){Write-Warning -Message "END Block - Error while exporting the data in a XML file"}
+			}#CATCH
+		}#IF($Path)
+		Write-Verbose -Message "Get-Pair - Script Completed"}#END block
+}#function Get-Pair
 
-
-function Get-ProjectPair{
+function Get-PairProject{
     [CmdletBinding()]
 	PARAM(
 		[ValidateCount(0,5)]
@@ -79,63 +88,112 @@ function Get-ProjectPair{
 		[System.Collections.ArrayList]$List,
         [Parameter(Mandatory)]
 		$NumberPerPair,
-        #[Parameter(Mandatory,HelpMessage="You must save the result, please specify a path")]
-		$Path
+		$Path,
+		[Parameter(ParameterSetName="History")]
+		[Switch]$History=$true,
+		[Parameter(ParameterSetName="History")]
+		[int]$Cycle = 4
 	)	
 	BEGIN{
-        
-        $Pairs = Get-Pair -List $List -NumberPerPair $NumberPerPair
+		TRY{
+        	[System.Collections.ArrayList]$Pairs = Get-Pair -List $List -NumberPerPair $NumberPerPair -ErrorAction Stop -ErrorVariable BeginErrorGetPair
+		
+			IF ($History){
+				function Get-PairProjectHistory {
+					[CmdletBinding()]	
+					PARAM(
+						[ValidateScript({Test-Path -Path $_})]
+						$Path
+					)
+					BEGIN{}
+					PROCESS{
+						Get-ChildItem -Path $path
+						#PairProject_Export-$DateFormat.xml
+						}
+					END{Write-Verbose -Message "Get-PairProjectHistory - Script Completed"}
+				}#function Get-PairProjectHistory
+			}#IF ($History)
+			$Export=@()
+		}CATCH {
+			Write-Error -Message "BEGIN Block - Something wrong happened"
+			IF($BeginErrorGetPair){Write-Warning -Message "BEGIN Block - Error while getting the pairs"}
+		}
     }#BEGIN Block
     PROCESS{
-        IF ($PSBoundParameters["PrimaryList"]){
-            IF ($PrimaryList.count -gt $Pairs.count){
-                Write-Warning -Message "Too Much Primary specified, can assigned them all"
-                Break
-            }ELSE{
-                Write-Verbose -Message "$($PrimaryList.count) Primary specified"
-                WHILE ($PrimaryList.count -ne 0){
-                    # For each Primary name listed
-                    1..$($PrimaryList.count) | 
-                        ForEach-Object -Process {
-                            # Creating HashTable
-                            $Output = @{}
+		TRY{
+	        IF ($PSBoundParameters["PrimaryList"]){
+	            IF ($PrimaryList.count -gt $Pairs.count){
+	                Write-Warning -Message "Too Much Primary specified, can assigned them all"
+	                Break
+	            }ELSE{
+	                Write-Verbose -Message "$($PrimaryList.count) Primary specified"
+	                WHILE ($PrimaryList.count -ne 0){
+	                    # For each Primary name listed
+	                    1..$($PrimaryList.count) | 
+	                        ForEach-Object -Process {
+	                            # Creating HashTable
+	                            $Output = @{}
 
-                            # Get a Random Primary
-                            $PrimarySelected = Get-Random -Count 1 -InputObject $PrimaryList
-                            $PairSelected = Get-Random -Count 1 -InputObject $Pairs
+	                            # Get a Random Primary
+	                            $PrimarySelected = Get-Random -Count 1 -InputObject $PrimaryList -ErrorAction Stop -ErrorVariable ProcessErrorPrimarySelected
+	                            $PairSelected = Get-Random -Count 1 -InputObject $Pairs -ErrorAction Stop -ErrorVariable ProcessErrorPairSelected
 
-                            # Add Primary to a Pair
-                            $Output.PairNumber = $PairSelected.PairNumber
-                            $Output.Pair = $PairSelected.pair
-                            $Output.Pair += $PrimarySelected
-                            
-                            #Remove PrimarySelect from Primary List and the Selected Pair from $pairs
-                            $PrimarySelected | ForEach-Object {$PrimaryList.Remove($_)}
-                            #$Pairs | ForEach-Object {$Pairs.Remove($PairSelected)}
-                            $Pairs.PSObject.Properties.Remove($PairSelected.pairNumber)
+	                            # Add the pair and Primary selected from the hashtable $Output
+	                            $Output.PairNumber = $PairSelected.PairNumber
+	                            $Output.Pair = $PairSelected.pair
+	                            $Output.Pair += $PrimarySelected
+	                            
+	                            # Remove PrimarySelect from Primary List and the Selected Pair from $pairs
+	                            $PrimarySelected | ForEach-Object -Process {$PrimaryList.Remove($_)}
+								
+								# Remove the Pair Selected from the list of Pairs
+	                            $Pairs.Remove($PairSelected)
 
-                            # Creating PSobject and outputting the data
-                            Write-Verbose -Message "Output pair with a primary"
-                            New-Object -TypeName PSObject -Property $output
-                        }#ForEach-Object
-  
-
-                    Write-Verbose -Message "Output the rest of $pairs"
-                    Write-output $pairs
-                } #WHILE ($Primary.count -ne 0)
-            }#ELSE
-        }#IF ($Primary)
-        ELSE{
-        $pairs
-        }
-
+	                            # Creating PSobject and outputting the data
+	                            Write-Verbose -Message "Output pair with a primary"
+	                            $Output = New-Object -TypeName PSObject -Property $output -ErrorAction Stop -ErrorVariable ProcessErrorNewObject 
+								Write-Output -InputObject $Output
+								
+								$Export += $Output
+							
+							}#ForEach-Object
+						
+	                    Write-Verbose -Message "Output the rest of $pairs"
+	                    Write-output -InputObject $Pairs
+						
+						$Export += $Pairs
+	                } #WHILE ($Primary.count -ne 0)
+	            }#ELSE
+	        }#IF ($Primary)
+	        ELSE{
+	        	Write-Output -InputObject $Pairs
+				$Export += $Pairs
+				
+	        }#ELSE
+			
+		}CATCH{
+			Write-Warning -Message "PROCESS BLOCK - Something horrible happened !"
+			IF($ProcessErrorPrimarySelected) {Write-Warning -Message "PROCESS BLOCK - Error while getting Random Primary"}
+			IF($ProcessErrorPairSelected) {Write-Warning -Message "PROCESS BLOCK - Error while getting Random Pair"}
+			IF($ProcessErrorNewObject) {Write-Warning -Message "PROCESS BLOCK - Error Outputting the variable '$output'"}
+		}
     }#PROCESS Block
-    END{}#END Block
+    END{
+		IF($Path){
+			TRY{
+				Write-Verbose -Message "END Block - Exporting Data to $Path"
+				Export-Clixml -InputObject $Export -Path (Join-Path -Path $Export -ChildPath "PairProject_Export-$DateFormat.xml") -ErrorAction 'Continue' -ErrorVariable EndErrorExportClixml
+				EndErrorExportClixml
+			}CATCH{
+				
+			}
+			FINALLY {Write-Verbose -Message "END BLOCK - Data Exported"}
+		}#IF($Path)
+		Write-Verbose -Message "Get-ProjectPair - Script Completed"
+	}#END Block
 }
 
 
-#Get-Pair -NumberPerPair 4 -List "Syed","Kim","Sam","Hazem","Pilar","Terry","Amy","Greg","Pamela","Julie","David","Robert","Shai","Ann","Mason","Sharon","xavier","dexter"
+Get-Pair -NumberPerPair 4 -List "Syed","Kim","Sam","Hazem","Pilar","Terry","Amy","Greg","Pamela","Julie","David","Robert","Shai","Ann","Mason","Sharon"
 
-
-Get-ProjectPair -NumberPerPair 2 -List "Syed","Kim","Sam","Hazem","Pilar","Terry","Amy","Greg","Pamela","Julie","David","Robert","Shai","Ann","Mason","Sharon","xavier","dexter" -PrimaryList "Vivian","Dominique" -Verbose | 
-    Sort-Object PairNumber
+Get-PairProject -NumberPerPair 2 -List "Syed","Kim","Sam","Hazem","Pilar","Terry","Amy","Greg","Pamela","Julie","David","Robert","Shai","Ann","Mason","Sharon","xavier","dexter" -PrimaryList "Vivian","Dominique" -Verbose
