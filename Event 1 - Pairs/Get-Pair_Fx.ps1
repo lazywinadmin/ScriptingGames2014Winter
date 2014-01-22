@@ -134,11 +134,15 @@ function Get-PairProject{
 						[pscustomobject]$info = $Files | Import-Clixml
 						
 						# Create HashTable
-				
+	                    $table = @()
+					
 						#Create a hashtable for each name
-						FOREACH ($name in $info.pair){
-								@{Name=$name;Previous=""} | Set-variable $name
-						}
+						#FOREACH ($name in $info.pair){
+						#		@{Name=$name;Previous=""} | Set-variable $name -Scope script
+						#}
+	                    #FOREACH ($name in $info.pair){
+						#		$table += @{"Name"=$name;"Previous"=""}
+	                    #}
 
 						# Process each XML file
 						0..($files.count-1) |
