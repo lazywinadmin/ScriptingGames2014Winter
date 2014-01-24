@@ -137,14 +137,22 @@ Function Get-PairsWithHistory {
 						$Person.Previous += $Candidate
 						
 						# Reverse Update
-						$Pal = $History | Where-Object {$_.Person -eq $Candidate}
 						
+						if (!($Pal = $History | Where-Object {$_.Person -eq $Candidate}))
+                        {
+                            #The pal can be empty if the Primaries are changed afetr each stage
+                            $History += New-Object PSObject -Property @{Person = $Candidate; Previous = @()}
+                            #after adding an empty property for a Dev which was primary in earlier run.
+                            #Above will make sure that below doesn't give any error
+                            $Pal = $History | Where-Object {$_.Person -eq $Candidate}
+                        }
 						$PalPrevious = $Pal.Previous
 						if ($PalPrevious.Count -ge $MaxAssignment) {
 							$PalPrevious = $PalPrevious | Where-Object {$_ -ne $PalPrevious[0]}
 							$Pal.Previous = $PalPrevious
 						}
 						
+                        
 						$Pal.Previous += $Who
 						break
 					}
@@ -250,6 +258,7 @@ Function Get-DevPairs {
 
 [array]$names = "Syed", "Kim", "Sam", "Hazem", "Pilar", "Terry", "Amy", "Greg", "Pamela", "Julie", "David", "Robert", "Shai", "Ann", "Mason", "Sharon"
 [array]$primaries = "Syed", "Terry", "David", "Sharon"
-
-Get-DevPairs -List $names -Primaries $primaries -Path "c:\ps"
+#[array]$primaries = "Pilar","Ann","Kim"
+$VerbosePreference = 'continue'
+Get-DevPairs -List $names -Primaries $primaries -Path "C:\Temp\dex" -Verbose
 #Get-Pairs -Pairs $names -Path "c:\ps\" -Verbose
