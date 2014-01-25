@@ -197,9 +197,52 @@ Function Get-DevPair {
 			ben                        Michelou                          
 			
 	.EXAMPLE
+			Get-DevPair -List "Syed", "Kim", "Sam", "Hazem", "Pilar", "Terry", "Amy", "Greg", "Pamela", "Julie", "David", "Robert", "Shai", "Ann", "Mason", "Sharon" -Primaries "Pilar","Ann","Kim" -Path "C:\ps" -Verbose
 			
+			VERBOSE: [PROCESS] Processing Shai
+			VERBOSE: [PROCESS] Created a pair between Shai and Julie
+			VERBOSE: [PROCESS] Processing Pamela
+			VERBOSE: [PROCESS] Created a pair between Pamela and Amy
+			VERBOSE: [PROCESS] Processing Sam
+			VERBOSE: [PROCESS] Created a pair between Sam and Robert
+			VERBOSE: [PROCESS] Processing Kim
+			VERBOSE: [PROCESS] Processing Mason
+			VERBOSE: [PROCESS] Created a pair between Mason and Sharon
+			VERBOSE: [PROCESS] Processing Hazem
+			VERBOSE: [PROCESS] Created a pair between Hazem and Syed
+			VERBOSE: [PROCESS] Processing Ann
+			VERBOSE: [PROCESS] Processing Pilar
+			VERBOSE: [PROCESS] Processing Amy
+			VERBOSE: [PROCESS] Processing Greg
+			VERBOSE: [PROCESS] Created a pair between Greg and David
+			VERBOSE: [PROCESS] Processing Julie
+			VERBOSE: [PROCESS] Processing Robert
+			VERBOSE: [PROCESS] Processing ben
+			VERBOSE: [PROCESS] Processing stephane
+			VERBOSE: [PROCESS] Processing fx
+			VERBOSE: [PROCESS] Processing dex
+			VERBOSE: [PROCESS] Processing Sharon
+			VERBOSE: [PROCESS] Processing Terry
+			VERBOSE: [PROCESS] Processing David
+			VERBOSE: [PROCESS] Processing Syed
+			VERBOSE: [PROCESS] Processing Michelou
+			VERBOSE: [END] Function Get-PairsWithHistory Completed !
+			VERBOSE: [PROCESS] Assigning Primaries to pairs
+			VERBOSE: [PROCESS] Primary Pilar has been assigned to pair @{Person=Shai; Pal=Julie}
+			VERBOSE: [PROCESS] Primary Ann has been assigned to pair @{Person=Pamela; Pal=Amy}
+			VERBOSE: [PROCESS] Primary Kim has been assigned to pair @{Person=Sam; Pal=Robert}
+			
+			Person                     Pal                        Primary                  
+			------                     ---                        -------                  
+			Shai                       Julie                      Pilar                    
+			Pamela                     Amy                        Ann                      
+			Sam                        Robert                     Kim                      
+			Mason                      Sharon                                              
+			Hazem                      Syed                                                
+			Greg                       David                           
 
 #>
+
     [CmdletBinding()]
     PARAM(
         [Parameter(
