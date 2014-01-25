@@ -1,4 +1,4 @@
-﻿Function Get-Pairs {
+Function Get-Pairs {
 	[cmdletbinding()]
 	Param(
 		[Parameter(
@@ -22,7 +22,11 @@
 		If (($Pairs.Count % 2) -ne 0) {
 			Write-Warning -Message "The Pairing is odd"
 			
+        do
+           {
             $specialpal = $Pairs | Out-GridView  -OutputMode Single -Title "select the Special Pal"
+           }
+        until ($SpecialPal)
 			
 		}
 		
