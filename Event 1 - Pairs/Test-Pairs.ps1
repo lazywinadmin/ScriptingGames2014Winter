@@ -241,6 +241,23 @@ Function Get-DevPair {
 			Hazem                      Syed                                                
 			Greg                       David                           
 
+	.EXAMPLE	
+			Get-DevPair -List "Syed", "Kim", "Sam", "Hazem", "Pilar", "Terry", "Amy", "Greg", "Pamela", "Julie", "David", "Robert", "Shai", "Ann", "Mason", "Sharon" -Path "C:\ps"
+			
+			Person                                  Pal                                    
+			------                                  ---                                    
+			Shai                                    Kim                                    
+			Pamela                                  Pilar                                  
+			Sam                                     Amy                                    
+			Mason                                   Hazem                                  
+			Ann                                     Terry                                  
+			Greg                                    Syed                                   
+			Julie                                   Robert                                 
+			Sharon                                  David 
+
+			This example show how to generate pais with a list of 16 persons. The output is sent to the $path variable
+			A XML file will be generated, for example "Export-DevPairs_20140125_164210.xml"
+
 #>
 
     [CmdletBinding()]
