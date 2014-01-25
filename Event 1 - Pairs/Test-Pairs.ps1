@@ -261,9 +261,10 @@ Function Get-DevPair {
 
 #>
 
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName='Default')]
     PARAM(
         [Parameter(
+            ParameterSetName = 'Default',
             Mandatory,
             HelpMessage="Specify the list of people to assign in pairs",
             Position=0)]
@@ -271,23 +272,24 @@ Function Get-DevPair {
         
         [ValidateCount(0,5)]    
         [Parameter(
-            Mandatory,
-            HelpMessage="You have to specify the list of primaries",
-            Position=1)]
+            Position=1,
+            ParameterSetName = 'Default')]
         [Array]$Primaries,
     
         [ValidateScript(
             {Test-Path -path $_})]
         [Parameter(
+            ParameterSetName = 'Default',
             Mandatory,
             HelpMessage="You have to specify the Path where the file(s) will be saved"
             )]
         [String]$Path,
         
         [Parameter(ParameterSetName="Email")]
+        [Parameter(ParameterSetName="Default")]
         [switch]$Email,
         
-        [Parameter(ParameterSetName="Email")]
+        [Parameter(ParameterSetName="Email",Mandatory)]
         [string[]]$EmailTo,
         
         [Parameter(ParameterSetName="Email")]
@@ -533,5 +535,5 @@ Function Get-DevPair {
 
 [array]$names = "Syed", "Kim", "Sam", "Hazem", "Pilar", "Terry", "Amy", "Greg", "Pamela", "Julie", "David", "Robert", "Shai", "Ann", "Mason", "Sharon"
 [array]$primaries = "Pilar","Ann","Kim"
-#Get-DevPair -List $names -Primaries $primaries -Path "C:\ps" -Verbose
- Get-Pair -Pairs $names -Verbose #-Path "c:\ps\"
+Get-DevPair -List $names -Path "C:\ps" -Verbose
+ #Get-Pair -Pairs "Syed", "Kim", "Sam", "Hazem", "Pilar", "Terry", "Amy", "Greg", "Pamela", "Julie", "David", "Robert", "Shai", "Ann", "Mason", "Sharon" -Verbose -Path "c:\ps\"
