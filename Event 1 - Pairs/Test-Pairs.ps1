@@ -54,11 +54,8 @@ Function Get-Pair {
     PARAM(
         [Parameter(
             Mandatory,
-            HelpMessage="You have to specify the list of person to add in the pairs",
-            ValueFromPipeline,
-            ValueFromPipelineByPropertyName,
-            Position=0)]
-        [Array]$Pairs,
+            HelpMessage="You have to specify the list of person to add in the pairs")]
+        [array]$Pairs,
         
         [ValidateScript(
             {Test-Path -path $_})]
@@ -69,7 +66,7 @@ Function Get-Pair {
         $SpecialPal = ""
         IF ($Pairs.Count -lt 2) {
             Write-Error -Message "[BEGIN] How do you want to make pairs with less than 2 persons?!"
-            return
+            break
         }#IF
         
         # Counting Pairs and check if it is a off number
@@ -266,11 +263,11 @@ Function Get-DevPair {
         [Parameter(
             ParameterSetName = 'Default',
             Mandatory,
-            HelpMessage="Specify the list of people to assign in pairs",
-            Position=0)]
+            HelpMessage="Specify the list of people to assign in pairs")]
+        [ValidateCount(8,50)]
         [Array]$List,
         
-        [ValidateCount(0,5)]    
+        [ValidateCount(0,5)]
         [Parameter(
             Position=1,
             ParameterSetName = 'Default')]
@@ -332,22 +329,8 @@ Function Get-DevPair {
 		                $names = "Benny","Stephane","FX","Dexter","Allister","Guido"
 		                Get-PairsWithHistory -Pairs $name -path C:\ProjectPairs-History.xml -verbose 
 
-		        .INPUTS
-		                None
-
 		        .OUTPUTS
 		                System.Management.Automation.PSCustomObject
-
-		        .NOTES
-						Tried not to use += operator as it creates a new array. Used Arraylist as they have Add() and Removeat() methods.
-						Just write the object to pipeline the indirection takes care of wrapping them up into arrays.
-
-		        .LINK
-		                http://mjolinor.wordpress.com/2014/01/18/another-take-on-using-the-operator/
-
-		        .LINK
-		                http://powershell.org/wp/2013/09/16/powershell-performance-the-operator-and-when-to-avoid-it/
-
 		#>
 		    [CmdletBinding()]
 		    PARAM(
@@ -475,12 +458,13 @@ Function Get-DevPair {
 	            
 	            Write-Verbose -Message "[BEGIN] Exporting History to XML File"
 	            $history | Export-Clixml -Path (Join-Path -Path $path -ChildPath "ProjectPairs-History.xml") -ErrorAction Stop -ErrorVariable ErrorBeginExportCliXML
-	            $Pairs = Get-PairWithHistory -Pairs $Candidates -Path "$path\ProjectPairs-History.xml"
+	            $Pairs = Get-PairWithHistory -Pairs $Candidates -Path "$path\ProjectPairs-History.xml" -ErrorAction Stop -ErrorVariable ErrorBeginGetHistory
 	        }#ELSE
 		}#TRY Block
 		CATCH{
 			Write-Warning -Message "[BEGIN] Something wrong happened !"
 			IF ($ErrorBeginExportCliXML) {Write-Warning -Message "[BEGIN] Error while Exporting XML"}
+            IF ($ErrorBeginGetHistory) {Write-Warning -Message "[BEGIN] Error while getting the Pairs History"}
 			Write-Warning -Message $Error[0].Exception
 		}#CATCH
     }#BEGIN Block
@@ -533,7 +517,7 @@ Function Get-DevPair {
 	}#END Block
 }#Function Get-DevPairs
 
-[array]$names = "Syed", "Kim", "Sam", "Hazem", "Pilar", "Terry", "Amy", "Greg", "Pamela", "Julie", "David", "Robert", "Shai", "Ann", "Mason", "Sharon"
-[array]$primaries = "Pilar","Ann","Kim"
-Get-DevPair -List $names -Path "C:\ps" -Verbose
- #Get-Pair -Pairs "Syed", "Kim", "Sam", "Hazem", "Pilar", "Terry", "Amy", "Greg", "Pamela", "Julie", "David", "Robert", "Shai", "Ann", "Mason", "Sharon" -Verbose -Path "c:\ps\"
+#[array]$names = "Syed", "Kim", "Sam", "Hazem", "Pilar", "Terry", "Amy", "Greg", "Pamela", "Julie", "David", "Robert", "Shai", "Ann", "Mason", "Sharon"
+#[array]$primaries = "Pilar","Ann","Kim"
+#Get-DevPair -List $names -Path "C:\ps" -Verbose
+#Get-Pair -Pairs "Syed", "Kim", "Sam", "Hazem", "Pilar", "Terry", "Amy", "Greg", "Pamela", "Julie", "David", "Robert", "Shai", "Ann", "Mason", "Sharon" -Verbose -Path "c:\ps\"
