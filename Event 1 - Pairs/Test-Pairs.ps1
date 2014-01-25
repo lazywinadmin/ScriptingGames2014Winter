@@ -326,7 +326,7 @@ Function Get-DevPair {
 		            $Who = $Person.Person
 		            $Previous = $Person.Previous
 		            
-		            IF ($Processed -notcontains $Who) 
+		            IF (($Processed -notcontains $Who) -and ($Pairs -contains $Personname)) 
 		            {
 		                IF ($Previous.Count -ge $MaxAssignment)
 		                    {
@@ -475,5 +475,5 @@ Function Get-DevPair {
 
 [array]$names = "Syed", "Kim", "Sam", "Hazem", "Pilar", "Terry", "Amy", "Greg", "Pamela", "Julie", "David", "Robert", "Shai", "Ann", "Mason", "Sharon"
 [array]$primaries = "Pilar","Ann","Kim"
-#Get-DevPair -List $names -Primaries $primaries -Path "C:\ps" -Verbose
-Get-Pair -Pairs $names -Verbose #-Path "c:\ps\"
+Get-DevPair -List $names -Primaries $primaries -Path "C:\ps" -Verbose
+# Get-Pair -Pairs $names -Verbose #-Path "c:\ps\"
