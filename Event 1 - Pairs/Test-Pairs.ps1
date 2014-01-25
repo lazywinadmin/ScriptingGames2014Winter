@@ -22,20 +22,8 @@
 		If (($Pairs.Count % 2) -ne 0) {
 			Write-Warning -Message "The Pairing is odd"
 			
-			while ($true) {
-				$SpecialPal = Read-Host "who will have TWO secret pals?"
-				
-				If ($SpecialPal -eq "") { break; }
-				If ($Pairs -contains $SpecialPal) {
-					break
-				} else {
-					Write-Warning -Message "$SpecialPal is not present among the pairs"	
-				}
-			}
+            $specialpal = $Pairs | Out-GridView  -OutputMode Single -Title "select the Special Pal"
 			
-			If ($SpecialPal -eq "") {
-				Write-Warning -Message "There is no special pal specified!"	
-			}
 		}
 		
 		$Output = @()
