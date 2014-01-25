@@ -1,4 +1,4 @@
-Function Get-Pairs {
+Function Get-Pair {
 	[cmdletbinding()]
 	Param(
 		[Parameter(
@@ -47,6 +47,7 @@ Function Get-Pairs {
 		
 		# Assign the pairs
 		For ($i = 0; $i -lt $Pairs.Count; $i = $i + 2) {
+			Write-Verbose -Message "Created a pair between $($Pairs[$i]) and $(Pairs[$i+1])"
 			$pair = New-Object PSObject -Property @{
 				Person = $Pairs[$i]
 				Pal = $Pairs[$i+1]
@@ -57,9 +58,12 @@ Function Get-Pairs {
 		
 		# Our special pal is set?
 		If ($SpecialPal -ne "") {
+			$SpecialPairs = $Pairs | Get-Random -Count 2
+			Write-Verbose -Message "Our special pal $SpecialPal will now have two secrets pals: $SpecialPairs"
+			
 			$pair = New-Object PSObject -Property @{
 				Person = $SpecialPal
-				Pal = $Pairs | Get-Random -Count 2
+				Pal = $SpecialPairs
 			}
 			
 			$Output += $pair
@@ -110,7 +114,8 @@ Function Get-PairsWithHistory {
         # if we use -- foreach ($person in $history) -- then  it would fail saying cannot enumerate as the collection changed
         ForEach ($Personname in $History.person) 
         {
-			$person = $History | Where person -eq "$personname"
+			Write-Verbose -Message "Processing $Personname"
+			$person = $History | Where person -eq "$Personname"
             $Who = $Person.Person
 			$Previous = $Person.Previous
 			
@@ -121,7 +126,6 @@ Function Get-PairsWithHistory {
 				        #Remove the first element from the array and the Object itself
 				    
 				        $Previous.removeat(0)
-				        
 				    }
 				
 				$Eligible = $Pairs | Where-Object {$_ -ne $Who}
@@ -130,6 +134,8 @@ Function Get-PairsWithHistory {
                 {
 					if (($Previous -notcontains $Candidate) -and ($Processed -notcontains $Candidate)) 
                         {
+						Write-Verbose -Message "Created a pair between $Who and $Candidate"
+						
 						    [pscustomobject]@{Person = $Who;Pal = $Candidate} 
                             #write this object to pipeline..using indirection it will give the array
                                         						
@@ -229,6 +235,7 @@ Function Get-DevPairs {
 			ForEach ($Pair in $Pairs) {
 				If ($i -lt $Primaries.Count) {
 					$Primary = $Primaries[$i]
+					Write-Verbose -Message "Primary $Primary has been assigned to pair $Pair"
 					$Pair | Add-Member -MemberType NoteProperty -Name Primary -Value $Primary
 					$i++
 				} else {
@@ -263,4 +270,4 @@ Function Get-DevPairs {
 [array]$primaries = "Pilar","Ann","Kim"
 $VerbosePreference = 'continue'
 Get-DevPairs -List $names -Primaries $primaries -Path "C:\Temp\test" -Verbose
-#Get-Pairs -Pairs $names -Path "c:\ps\" -Verbose
+#Get-Pair -Pairs $names -Path "c:\ps\" -Verbose
