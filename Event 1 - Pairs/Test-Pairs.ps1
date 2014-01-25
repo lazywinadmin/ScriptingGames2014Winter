@@ -226,10 +226,7 @@ Function Get-DevPair {
         [Parameter(ParameterSetName="Email")]
         [switch]$Email,
         
-        [Parameter(
-        	Mandatory,
-        	HelpMessage="You have to specify the destination email(s) address",
-        	ParameterSetName="Email")]
+        [Parameter(ParameterSetName="Email")]
         [string[]]$EmailTo,
         
         [Parameter(ParameterSetName="Email")]
