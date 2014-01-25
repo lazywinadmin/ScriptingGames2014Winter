@@ -1,7 +1,6 @@
 #requires -version 3
 Function Get-Pair {
 <#
-
     .SYNOPSIS
             This function Get-Pair will return pairs of people.
 
@@ -87,14 +86,12 @@ Function Get-Pair {
     }#BEGIN Block
     
     PROCESS {
-        TRY{
-	        # If a special pal is specified, then we remove him from the pair's array
-	        IF ($SpecialPal -ne "") {
+		TRY{
+	        
 	            #add the special pal twice to the list to make it even number of names
 	            $Pairs += $SpecialPal 
 	            
 	            Write-Verbose -Message "[PROCESS] $SpecialPal Will have two secret pals"
-	        }#IF
 	        
 	        # Mixing the pairs to avoid people being with the same pairs
 	        $Pairs = $Pairs | Get-Random -Count $Pairs.Count
@@ -102,10 +99,20 @@ Function Get-Pair {
 	        # Assign the pairs
 	        FOR ($i = 0; $i -lt $Pairs.Count; $i = $i + 2) {
 	            Write-Verbose -Message "[PROCESS] Created a pair between $($Pairs[$i]) and $($Pairs[$i+1])"
-	            $pair = New-Object -TypeName PSObject -Property @{
-	                Person = $Pairs[$i]
-	                Pal = $Pairs[$i+1]
-	            }#New-Object PSObject
+	            if ($pair[$i] -ne $pair[$i +1])
+	            {
+	            	$pair = New-Object -TypeName PSObject -Property @{
+	                				Person = $Pairs[$i]
+	                				Pal = $Pairs[$i+1]
+	            				}#New-Object PSObject
+	            }
+	            else
+	            {
+	            	#there might be a case where the Get-Random puts the Special pal and added Special Pal cosecutively
+	            	#this takes care of it and prompts user to run the Function again
+			        Throw "couldn't randomize properly ..run the script again"
+	            }
+            	
 	            
 	           Write-Output -inputobject $pair #Write the Output to the pipeline
 	           # Array will be created automatically using Indirection
