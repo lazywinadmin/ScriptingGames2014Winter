@@ -29,6 +29,27 @@ Function Get-Pair {
 
     .EXAMPLE
             Get-Pair -Pairs "Syed", "Kim", "Sam", "Hazem", "Pilar", "Terry", "Amy", "Greg", "Pamela", "Julie", "David", "Robert", "Shai", "Ann", "Mason", "Sharon" -Verbose
+            
+			Person                                  Pal                                    
+			------                                  ---                                    
+			VERBOSE: [PROCESS] Created a pair between Pilar and Amy
+			Pilar                                   Amy                                    
+			VERBOSE: [PROCESS] Created a pair between Mason and Robert
+			Mason                                   Robert                                 
+			VERBOSE: [PROCESS] Created a pair between Shai and Greg
+			Shai                                    Greg                                   
+			VERBOSE: [PROCESS] Created a pair between Julie and Terry
+			Julie                                   Terry                                  
+			VERBOSE: [PROCESS] Created a pair between Sam and Ann
+			Sam                                     Ann                                    
+			VERBOSE: [PROCESS] Created a pair between Kim and Syed
+			Kim                                     Syed                                   
+			VERBOSE: [PROCESS] Created a pair between Pamela and Hazem
+			Pamela                                  Hazem                                  
+			VERBOSE: [PROCESS] Created a pair between David and Sharon
+			David                                   Sharon                 
+			            
+            
 #>
     [CmdletBinding()]
     PARAM(
@@ -443,5 +464,5 @@ Function Get-DevPair {
 
 [array]$names = "Syed", "Kim", "Sam", "Hazem", "Pilar", "Terry", "Amy", "Greg", "Pamela", "Julie", "David", "Robert", "Shai", "Ann", "Mason", "Sharon"
 [array]$primaries = "Pilar","Ann","Kim"
-Get-DevPair -List $names -Primaries $primaries -Path "C:\Temp\test" -Verbose
+#Get-DevPair -List $names -Primaries $primaries -Path "C:\ps" -Verbose
 Get-Pair -Pairs $names -Verbose #-Path "c:\ps\"
