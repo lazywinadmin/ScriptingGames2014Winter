@@ -145,60 +145,45 @@ Function Get-Pair {
 
 Function Get-DevPair {
 <#
-		.SYNOPSIS
-				Get's the developement pairs
+	.SYNOPSIS
+			Get's the developement pairs
 
-		.DESCRIPTION
+	.DESCRIPTION
 
 
-		.PARAMETER  Path
-				Export path that is used in order to expor the history of pairs.
+	.PARAMETER  Path
+			Export path that is used in order to expor the history of pairs.
 
-		.PARAMETER  List
-				Par
+	.PARAMETER  List
+			Specifies the list of persons to add in the pairs
+			
+	.PARAMETER Email
+			Enable to Parameters to send email to the pairs
 
-		.PARAMETER DestinationEmail
+	.PARAMETER EmailTo
+			Specifies the destination email address(es)
 
-		.PARAMETER  Mailing
-				use this switch in order to send and email to each pair to inform them of their pair status.
+	.PARAMETER EmailFrom
+			Specifies the sender email address
 
-		.PARAMETER DestinationEmail
-				Speciefies the destination email adress.
-				Several email adresses can be specefied by seperating them with a coma "," .
+	.PARAMETER EmailSubject
+			Specifies the subject of the email
 
-		.PARAMETER Subject
-				Specifies the subject for the email that will be sent to the different pairs.
+	.PARAMETER EmailServer
+			Specifies the SMTP server to use
 
-		.PARAMETER emailSender
-				Specifies the adress of the email sender.
+	.PARAMETER EmailCc
+			Specifies the person Email Address to carbon copy
 
-		.PARAMETER Cc
-				Allow's to put one or several persons (email adresses) as carbon copy.
+	.PARAMETER EmailServer
+			Specifies the SMTP server that will be used in order to send the email message.
 
-		.PARAMTER SmtpServer
-				Specifies the SMTP server that will be used in order to send the email message.
-
-		.EXAMPLE
-				Get-DevPair -List $names -Primaries $primaries -Path "C:\Temp\test" -Verbose
-				Where Primaries 
+	.EXAMPLE
+			Get-DevPair -List $names -Primaries $primaries -Path "C:\Temp\test" -Verbose
+			Where Primaries 
 
         .EXAMPLE
                 Get-Something 'One value' 32
-
-        .INPUTS
-                System.String,System.Int32
-
-        .OUTPUTS
-                System.String
-
-        .NOTES
-                Additional information about the function go here.
-
-        .LINK
-                about_functions_advanced
-
-        .LINK
-                about_comment_based_help
 
 #>
     [CmdletBinding()]
