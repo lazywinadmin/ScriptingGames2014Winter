@@ -87,10 +87,11 @@ Function Get-Pair {
     PROCESS {
 		TRY{
 	        
+            IF($SpecialPal){
 	            #add the special pal twice to the list to make it even number of names
-	            $Pairs += $SpecialPal 
-	            
+	            $Pairs += $SpecialPal     
 	            Write-Verbose -Message "[PROCESS] $SpecialPal Will have two secret pals"
+            }
 	        
 	        # Mixing the pairs to avoid people being with the same pairs
 	        $Pairs = $Pairs | Get-Random -Count $Pairs.Count
@@ -98,7 +99,7 @@ Function Get-Pair {
 	        # Assign the pairs
 	        FOR ($i = 0; $i -lt $Pairs.Count; $i = $i + 2) {
 	            Write-Verbose -Message "[PROCESS] Created a pair between $($Pairs[$i]) and $($Pairs[$i+1])"
-	            if ($pair[$i] -ne $pair[$i +1])
+	            if ($pairs[$i] -ne $pairs[$i +1])
 	            {
 	            	$pair = New-Object -TypeName PSObject -Property @{
 	                				Person = $Pairs[$i]
@@ -532,5 +533,5 @@ Function Get-DevPair {
 
 [array]$names = "Syed", "Kim", "Sam", "Hazem", "Pilar", "Terry", "Amy", "Greg", "Pamela", "Julie", "David", "Robert", "Shai", "Ann", "Mason", "Sharon"
 [array]$primaries = "Pilar","Ann","Kim"
-Get-DevPair -List $names -Primaries $primaries -Path "C:\ps" -Verbose
-# Get-Pair -Pairs $names -Verbose #-Path "c:\ps\"
+#Get-DevPair -List $names -Primaries $primaries -Path "C:\ps" -Verbose
+ Get-Pair -Pairs $names -Verbose #-Path "c:\ps\"
