@@ -182,8 +182,22 @@ Function Get-DevPair {
 			Specifies the SMTP server that will be used in order to send the email message.
 
 	.EXAMPLE
-			Get-DevPair -List $names -Primaries $primaries -Path "C:\Temp\test" -Verbose
-			Where Primaries 
+			Get-DevPair -List "Michelou","Syed", "Kim", "Sam", "Hazem", "Pilar", "Terry", "Amy", "Greg", "Pamela", "Julie", "David", "Robert", "Shai", "Ann", "Mason", "Sharon" -Primaries "Loulou","phiphi","picsou" -Path "C:\ps" -Verbose
+			
+			Person                     Pal                        Primary                  
+			------                     ---                        -------                  
+			Shai                       Hazem                      Loulou                   
+			Pamela                     Amy                        phiphi                   
+			Sam                        Sharon                     picsou                   
+			Kim                        Mason                                               
+			Ann                        Robert                                              
+			Pilar                      Terry                                               
+			Greg                       Syed                                                
+			Julie                      David                                               
+			ben                        Michelou                          
+			
+	.EXAMPLE
+			
 
 #>
     [CmdletBinding()]
