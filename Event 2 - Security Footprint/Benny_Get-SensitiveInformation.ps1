@@ -27,6 +27,15 @@ Function Get-SensitiveInformation {
         } else {
             $SelectedProtocol = $Protocol
         }
+
+        # Expression to get some registry values
+        $GetRemoteRegistryValues = {
+            $item = Get-Item HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\run
+
+            $item | Select-Object -ExpandProperty Property | ForEach-Object {
+                Write-Output (New-Object -TypeName PSCustomObject -Property @{ Name = $_; Value = $item.GetValue($_)})
+            }
+        }
     }
 
     PROCESS {
@@ -92,7 +101,8 @@ Function Get-SensitiveInformation {
                 $RemoteShares = Get-CimInstance -CimSession $CimSession -ClassName Win32_Share -Property Name, Path, Description | Select-Object Name, Path, Description
 
                 # Information - Registry
-                #Invoke-command -Computer $Computer {Get-ItemProperty HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\run} -Credential $Credential
+                Write-Verbose -Message "[PROCESS] Attempting to retrieve: Registry Values"
+                Invoke-Command -Computer $Computer -ScriptBlock $GetRemoteRegistryValues -Credential $Credential
             } Catch {
                 If ($ProcessErrorTestConnection){ Write-Warning -Message "[PROCESS] Computer Unreachable: $Computer" }
                 write-host $error[0] # debug
