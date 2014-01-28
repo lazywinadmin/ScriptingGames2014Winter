@@ -85,12 +85,20 @@ Function Get-SensitiveInformation {
                 Write-Verbose -Message "[PROCESS] Attempting to retrieve: Running Process"
 
                 $RemoteProcess = Get-CimInstance -CimSession $CimSession -ClassName Win32_Process -Property Name | Select-Object Name
+
+                # Information - SMB Shares
+                Write-Verbose -Message "[PROCESS] Attempting to retrieve: Shares"
+
+                $RemoteShares = Get-CimInstance -CimSession $CimSession -ClassName Win32_Share -Property Name, Path, Description | Select-Object Name, Path, Description
+
+                # Information - Registry
+                #Invoke-command -Computer $Computer {Get-ItemProperty HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\run} -Credential $Credential
             } Catch {
                 If ($ProcessErrorTestConnection){ Write-Warning -Message "[PROCESS] Computer Unreachable: $Computer" }
                 write-host $error[0] # debug
             } Finally {
                 If ($CimSession) {
-                    Write-Verbose "[PROCESS] Removing CIM Session from $Computer"
+                    Write-Verbose "[PROCESS] Removing CIM Session from: $Computer"
                     Remove-CimSession $CimSession
                 }
             }
