@@ -38,7 +38,7 @@ Function Get-SensitiveInformation {
         }
 
         # Expression to get the installed product, we do not use Win32_Product due to it's odd behaviour (check and repair) and due to it's speed
-        $GetRemoteInstalledProduct = {
+        $GetRemoteInstalledProducts = {
             $Uninstallx86 = "\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall"
             $Uninstallx64 = "\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\"
             
@@ -59,6 +59,72 @@ Function Get-SensitiveInformation {
                 }
             }
         }
+
+        # Expression to get the given folder's content along with their properties
+        $GetRemoteFoldersProperties = {
+            # http://blogs.technet.com/b/heyscriptingguy/archive/2012/05/31/use-powershell-to-compute-md5-hashes-and-find-changed-files.aspx
+            Param(
+                $Folders
+            )
+            
+            $DeepScan = $true
+            $HashFiles = $true
+
+            ForEach ($Folder in $Folders) {
+                $Scan = New-Object -TypeName PSCustomObject -Property @{
+                    Folder = $Folder
+                    Size = 0
+                    FilesCount = 0
+                    Details = @()
+                }
+
+                If (Test-Path $Folder) {
+                    # We retrieve the content of the given folder
+                    $Content = Get-ChildItem $Folder -Recurse -ErrorAction SilentlyContinue
+
+                    # We retrieve the size of that folder - TODO try catch on empty folders, if only folders -> 0mb
+                    $Size = $Content | Measure-Object -Property Length -Sum
+                    $Size = "{0:N2}" -f ($Size.Sum / 1MB) + " MB"
+
+                    # We retrieve the amount of Files present within the root folder
+                    $FilesCount = $Content.Length
+
+                    $Scan.Size = $Size
+                    $Scan.FilesCount = $FilesCount
+
+                    # Deep scan?
+                    If ($DeepScan) {
+                        $Content | Where-Object {-not $_.PSIsContainer} | ForEach-Object {
+                            $File = $_ | Select FullName, Length, LastWriteTime
+                            $Hash = ""
+
+                            If ($HashFiles) {
+                                $Crypto = New-Object -TypeName System.Security.Cryptography.MD5CryptoServiceProvider
+
+                                #todo: try catch for file in use-->Exception calling "Open" with "3" argument(s): "The process cannot access the file 'C
+                                $Hash = [System.BitConverter]::ToString($Crypto.ComputeHash([System.IO.File]::Open($File.FullName,[System.IO.Filemode]::Open, [System.IO.FileAccess]::Read)))
+                            }
+                            
+                            $Scan.Details += New-Object -TypeName PSCustomObject -Property @{
+                                File = $File.FullName
+                                Size = "{0:N8}" -f ($File.Length / 1MB) + " MB"
+                                LastModified = $File.LastWriteTime
+                                Hash = $Hash
+                            }
+                        }
+                    }
+
+                    Write-Output $Scan
+                } else {
+                    Write-Warning -Message "[PROCESS] Folder $Folder does not exist on the current system"
+                }
+            }
+        }
+
+        # The folders that we want to scan
+        #$Folders = "C:\WINDOWS\System32"
+
+        $Folders = "C:\applics"
     }
 
     PROCESS {
@@ -131,8 +197,13 @@ Function Get-SensitiveInformation {
                 # Information - Installed Products
                 Write-Verbose -Message "[PROCESS] Attempting to retrieve: Installed Products"
 
-                $RemoteProducts = Invoke-Command -Computer $Computer -ScriptBlock $GetRemoteInstalledProduct -Credential $Credential | Select-Object Name, Label | Sort-Object Label
+                $RemoteProducts = Invoke-Command -Computer $Computer -ScriptBlock $GetRemoteInstalledProducts -Credential $Credential | Select-Object Name, Label | Sort-Object Label
+
+                # Information - Folders
+                Write-Verbose -Message "[PROCESS] Attempting to retrieve: Folders... this may take a while"
                 
+                $RemoteFolders = Invoke-Command -Computer $Computer -ScriptBlock $GetRemoteFoldersProperties -Credential $Credential -ArgumentList (,$Folders)
+                $RemoteFolders
             } Catch {
                 If ($ProcessErrorTestConnection){ Write-Warning -Message "[PROCESS] Computer Unreachable: $Computer" }
                 write-host $error[0] # debug
