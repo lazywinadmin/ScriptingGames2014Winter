@@ -36,6 +36,29 @@ Function Get-SensitiveInformation {
                 Write-Output (New-Object -TypeName PSCustomObject -Property @{ Name = $_; Value = $item.GetValue($_)})
             }
         }
+
+        # Expression to get the installed product, we do not use Win32_Product due to it's odd behaviour (check and repair) and due to it's speed
+        $GetRemoteInstalledProduct = {
+            $Uninstallx86 = "\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall"
+            $Uninstallx64 = "\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\"
+            
+            $Found = @()
+
+            $Path = @(
+                if (Test-Path "HKLM:$Uninstallx86" ) { Get-ChildItem "HKLM:$Uninstallx86"}
+                if (Test-Path "HKLM:$Uninstallx64" ) { Get-ChildItem "HKLM:$Uninstallx64"}
+                if (Test-Path "HKCU:$Uninstallx86" ) { Get-ChildItem "HKCU:$Uninstallx86"}
+                if (Test-Path "HKCU:$Uninstallx64" ) { Get-ChildItem "HKCU:$Uninstallx64"}
+            )
+
+            $Path | ForEach-Object {
+                if (!($Found -contains $_.PSChildName)) {
+                    if ($_.Property -contains "DisplayName") { $ProductLabel = $_.GetValue("DisplayName") } else { $ProductLabel = $_.PSChildName }
+                    Write-Output (New-Object -TypeName PSCustomObject -Property @{ Name = $_.PSChildName; Label = $ProductLabel })
+                    $Found += $_.PSChildName
+                }
+            }
+        }
     }
 
     PROCESS {
@@ -102,7 +125,14 @@ Function Get-SensitiveInformation {
 
                 # Information - Registry
                 Write-Verbose -Message "[PROCESS] Attempting to retrieve: Registry Values"
-                Invoke-Command -Computer $Computer -ScriptBlock $GetRemoteRegistryValues -Credential $Credential
+
+                $RemoteRegistry = Invoke-Command -Computer $Computer -ScriptBlock $GetRemoteRegistryValues -Credential $Credential | Select-Object Name, Value
+
+                # Information - Installed Products
+                Write-Verbose -Message "[PROCESS] Attempting to retrieve: Installed Products"
+
+                $RemoteProducts = Invoke-Command -Computer $Computer -ScriptBlock $GetRemoteInstalledProduct -Credential $Credential | Select-Object Name, Label | Sort-Object Label
+                
             } Catch {
                 If ($ProcessErrorTestConnection){ Write-Warning -Message "[PROCESS] Computer Unreachable: $Computer" }
                 write-host $error[0] # debug
