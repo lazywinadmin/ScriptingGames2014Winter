@@ -102,7 +102,11 @@ Function Get-SensitiveInformation {
                                 $Crypto = New-Object -TypeName System.Security.Cryptography.MD5CryptoServiceProvider
 
                                 #todo: try catch for file in use-->Exception calling "Open" with "3" argument(s): "The process cannot access the file 'C
-                                $Hash = [System.BitConverter]::ToString($Crypto.ComputeHash([System.IO.File]::Open($File.FullName,[System.IO.Filemode]::Open, [System.IO.FileAccess]::Read)))
+                                Try {
+                                    $Hash = [System.BitConverter]::ToString($Crypto.ComputeHash([System.IO.File]::Open($File.FullName,[System.IO.Filemode]::Open, [System.IO.FileAccess]::Read))) | Out-Null
+                                } Catch {
+                                    Write-Warning -Message "[PROCESS] Unable to hash File: $($File.FullName)"
+                                }
                             }
                             
                             $Scan.Details += New-Object -TypeName PSCustomObject -Property @{
@@ -203,7 +207,17 @@ Function Get-SensitiveInformation {
                 Write-Verbose -Message "[PROCESS] Attempting to retrieve: Folders... this may take a while"
                 
                 $RemoteFolders = Invoke-Command -Computer $Computer -ScriptBlock $GetRemoteFoldersProperties -Credential $Credential -ArgumentList (,$Folders)
-                $RemoteFolders
+                #$RemoteFolders
+
+                Write-Output (New-Object -TypeName PSCustomObject -Property @{ 
+                    Computer = $Computer; 
+                    EnvironmentVars = $RemoteEnv;
+                    Services = $RemoteServices;
+                    Process = $RemoteProcess;
+                    Shares = $RemoteShares;
+                    RegistryRun = $RemoteRegistry;
+                    Products = $RemoteProducts;
+                    Folders = $RemoteFolders })
             } Catch {
                 If ($ProcessErrorTestConnection){ Write-Warning -Message "[PROCESS] Computer Unreachable: $Computer" }
                 write-host $error[0] # debug
