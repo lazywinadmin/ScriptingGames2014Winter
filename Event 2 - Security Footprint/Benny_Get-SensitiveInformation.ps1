@@ -9,6 +9,12 @@ Function Get-SensitiveInformation {
                   ValueFromPipelineByPropertyName)]
                 [Array]$ComputerInput,
         
+        [Alias("Destination","DestinationPath")]
+        [Parameter(
+                  Mandatory)]
+        [ValidateScript({Test-Path -Path $_ })]
+                [Array]$Path,
+
         [Parameter()]
         [ValidateSet("WSMAN","DCOM")]
         [String]$Protocol,
@@ -20,6 +26,8 @@ Function Get-SensitiveInformation {
 
     BEGIN {
         Write-Verbose -Message "[BEGIN] Sensitive Information processing has started"
+
+        $ExecutionTime = Get-Date -Format 'yyyyMMdd_HHmmss'
 
         # No specified protocols?
         If (-not($PSBoundParameters['Protocol'])){
@@ -103,7 +111,7 @@ Function Get-SensitiveInformation {
 
                                 #todo: try catch for file in use-->Exception calling "Open" with "3" argument(s): "The process cannot access the file 'C
                                 Try {
-                                    $Hash = [System.BitConverter]::ToString($Crypto.ComputeHash([System.IO.File]::Open($File.FullName,[System.IO.Filemode]::Open, [System.IO.FileAccess]::Read))) | Out-Null
+                                    $Hash = [System.BitConverter]::ToString($Crypto.ComputeHash([System.IO.File]::Open($File.FullName,[System.IO.Filemode]::Open, [System.IO.FileAccess]::Read)))
                                 } Catch {
                                     Write-Warning -Message "[PROCESS] Unable to hash File: $($File.FullName)"
                                 }
@@ -209,7 +217,11 @@ Function Get-SensitiveInformation {
                 $RemoteFolders = Invoke-Command -Computer $Computer -ScriptBlock $GetRemoteFoldersProperties -Credential $Credential -ArgumentList (,$Folders)
                 #$RemoteFolders
 
-                Write-Output (New-Object -TypeName PSCustomObject -Property @{ 
+
+                # Finally we export the object as an XML
+                $FileOutput = "$($Path)\SensitiveInfo_$($Computer)_$($ExecutionTime).xml"
+
+                New-Object -TypeName PSCustomObject -Property @{ 
                     Computer = $Computer; 
                     EnvironmentVars = $RemoteEnv;
                     Services = $RemoteServices;
@@ -217,7 +229,9 @@ Function Get-SensitiveInformation {
                     Shares = $RemoteShares;
                     RegistryRun = $RemoteRegistry;
                     Products = $RemoteProducts;
-                    Folders = $RemoteFolders })
+                    Folders = $RemoteFolders 
+                } | Export-Clixml -Path $FileOutput
+
             } Catch {
                 If ($ProcessErrorTestConnection){ Write-Warning -Message "[PROCESS] Computer Unreachable: $Computer" }
                 write-host $error[0] # debug
