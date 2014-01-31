@@ -4,13 +4,13 @@ Function Get-XMlDifferences {
 	#Not Finalized yet
     [CmdletBinding()]
     Param(
-        [Parameter(mandatory=$true)]
+        [Parameter(mandatory=$true,position=0)]
         [ValidateScript({
             test-path $_
         
         })]
         $ReferenceObject,
-        [Parameter(mandatory=$true)]
+        [Parameter(mandatory=$true,position=1)]
         [ValidateScript({
             test-path $_
         
