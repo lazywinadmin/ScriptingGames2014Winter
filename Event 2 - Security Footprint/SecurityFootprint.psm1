@@ -1,4 +1,26 @@
 # Put all the functions in this file
+
+function Test-IsAdministrator
+{ 
+    <# 
+    .SYNOPSIS 
+        Tests if the user is an administrator 
+    .DESCRIPTION
+        Returns true if a user is an administrator, false if the user is not an administrator         
+    .EXAMPLE
+        Test-IsAdministrator
+	
+		This will return $true or $false
+    #>
+    (New-Object Security.Principal.WindowsPrincipal ([Security.Principal.WindowsIdentity]::GetCurrent())).IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator)
+}
+
+<#
+  Requires -RunAsAdministrator
+  Requires -Version 4
+#>
+
+
 #Region Stephane
 Function Get-XMlDifferences {
 	#Not Finalized yet
