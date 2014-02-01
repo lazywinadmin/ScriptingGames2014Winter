@@ -20,53 +20,53 @@ function Test-IsAdministrator
   Requires -Version 4
 #>
 
-
-#Region Stephane
-Function Get-XMlDifferences {
-	#Not Finalized yet
+Function Get-XMlDifference {
     [CmdletBinding()]
     PARAM(
         [Parameter(mandatory=$true,position=0)]
-        [ValidateScript({
-            test-path -Path $_
-        })]
+        [ValidateScript({Test-Path -Path $_})]
         $ReferenceObject,
 	
         [Parameter(mandatory=$true,position=1)]
-        [ValidateScript({
-            test-path -Path $_    
-        })]
+        [ValidateScript({Test-Path -Path $_})]
         $DifferenceObject
     )#PARAM
 
     BEGIN{}#BEGIN
     PROCESS{
-        #Getting the XML content to compare
-        $ContentReference = Get-Content -Path $ReferenceObject
-        $contentDifference = Get-Content -path $differenceObject
-        
-		#Getting differences
-        $Differences = Compare-Object -ReferenceObject $ContentReference -DifferenceObject $contentDifference -CaseSensitive | Where-Object {$_.sideIndicator -eq "=>"} | Select-Object -Property Inputobject
-       
-		#Retrieving line informations
-        $String = select-string -SimpleMatch -CaseSensitive '$($Differences.Inputobject)' -Path $ReferenceObject
-        $Return = [pscustomobject]@{"LineContent"=$Differences.Inputobject; "LineNumber"=$String.LineNumber}
+		TRY
+		{
+	        #Getting the XML content to compare
+	        $ContentReference = Get-Content -Path $ReferenceObject
+	        $contentDifference = Get-Content -path $differenceObject
+	        
+			#Getting differences
+	        $Differences = Compare-Object -ReferenceObject $ContentReference -DifferenceObject $contentDifference -CaseSensitive -ErrorAction Stop -ErrorVariable ErrorProcessCompare| Where-Object {$_.sideIndicator -eq "=>"} | Select-Object -Property Inputobject
+	       
+			#Retrieving line informations
+	        $String = Select-String -SimpleMatch -CaseSensitive '$($Differences.Inputobject)' -Path $ReferenceObject
+	        $Return = 	[pscustomobject]@{
+							"LineContent"=$Differences.Inputobject;
+							"LineNumber"=$String.LineNumber
+						}#$Return
+		}#TRY
+		CATCH
+		{
+			Write-Warning -Message "[PROCESS] Something went wrong"
+			IF ($ErrorProcessCompare) {Write-Warning -Message "[PROCESS] Error while comparing the 2 Objects"}
+			Write-Warning -Message $Error[0]
+		}#CATCH
 
     }#PROCESS
     END{
         Write-Output -InputObject $Return
     }#END
-}
+}#Get-XMlDifference
 
-$ReferenceObject = "C:\Users\gulicst1\SkyDrive\Scripting\Githhub\WinterScriptingGames2014\WinterScriptingGames2014\Event 2 - Security Footprint\Reference.config"
-$differenceObject = "C:\Users\gulicst1\SkyDrive\Scripting\Githhub\WinterScriptingGames2014\WinterScriptingGames2014\Event 2 - Security Footprint\Difference.config"
+#$ReferenceObject = "C:\Users\gulicst1\SkyDrive\Scripting\Githhub\WinterScriptingGames2014\WinterScriptingGames2014\Event 2 - Security Footprint\Reference.config"
+#$differenceObject = "C:\Users\gulicst1\SkyDrive\Scripting\Githhub\WinterScriptingGames2014\WinterScriptingGames2014\Event 2 - Security Footprint\Difference.config"
 
-Get-XMlDifferences -ReferenceObject $ReferenceObject -differenceObject $differenceObject
-#Not finished yet
-#EndRegion
-
-
-#region Set-SecurityMeasure
+#Get-XMlDifference -ReferenceObject $ReferenceObject -differenceObject $differenceObject
 
 function Set-SecurityMeasure
 {
@@ -122,7 +122,7 @@ function Set-SecurityMeasure
         [Parameter(Mandatory, 
                    ValueFromPipeline,
                    ValueFromPipelineByPropertyName)]
-        [ValidateScript({Test-Path -Path $_ -PathType Container })]
+        [ValidateScript({Test-Path -Path $_ -PathType Container})]
         [Alias("Fullname")]
         [string]$Path,
 
@@ -139,64 +139,76 @@ function Set-SecurityMeasure
         $PSBoundParameters.Remove('Force') | Out-Null
         $PSBoundParameters.Remove('Encrypt') | Out-Null
         $PSBoundParameters.Confirm = $False
+		
     }#BEGIN
 	
     PROCESS
     {
-        Write-Verbose -Message "[PROCESS]"
-        IF ( $Force -or $pscmdlet.ShouldProcess("$Path", "Setting Restricted ACL"))
-        {
-            #Get-Acl - Store the ACL 
-            $acl = Get-Acl -Path $Path
+		TRY{
+	        Write-Verbose -Message "[PROCESS]"
+	        IF ( $Force -or $pscmdlet.ShouldProcess("$Path", "Setting Restricted ACL"))
+	        {
+	            #Get-Acl - Store the ACL 
+	            $acl = Get-Acl -Path $Path -ErrorAction Stop -ErrorVariable ErrorProcessGetAcl
 
-            #Remove Inherited Rules and protect the rules from being changed by inheritance
-            $acl.SetAccessRuleProtection($True, $False)
-			
-            #Purge all the exisiting ACEs inside the ACL 
-            $acl.Access | ForEach-Object -Process {$acl.PurgeAccessRules($_.IdentityReference)}
+	            #Remove Inherited Rules and protect the rules from being changed by inheritance
+	            $acl.SetAccessRuleProtection($True, $False)
+				
+	            #Purge all the exisiting ACEs inside the ACL 
+	            $acl.Access | ForEach-Object -Process {$acl.PurgeAccessRules($_.IdentityReference)}
 
-            #set the User running the Script as the owner
-            Write-Verbose -Message "[PROCESS] Setting the $env:Username as the Owner for the $Path"
-            $acl.SetOwner([System.Security.Principal.NTAccount]"$env:username")
+	            #set the User running the Script as the owner
+	            Write-Verbose -Message "[PROCESS] Setting the $env:Username as the Owner for the $Path"
+	            $acl.SetOwner([System.Security.Principal.NTAccount]"$env:username")
 
-            #Give the Owner the Full access on the Folder
-            $dirAce = New-Object -TypeName System.Security.AccessControl.FileSystemAccessRule -ArgumentList "$env:Username","FullControl", "ContainerInherit, ObjectInherit", "None", "Allow"
-            $acl.AddAccessRule($dirAce)
-            
-            #now compare the Access on the Path to the Access we are giving...if there is a change then only set it
-            IF ((Compare-Object -ReferenceObject (Get-Acl -Path $Path).access  -DifferenceObject $acl.access) -or ($acl.Owner -ne (Get-acl -Path $Path).owner ))
-            {
-                #set the ACL Now as it seems to be modified
-                Write-Verbose -Message "[PROCESS] Setting the modified ACL to the $Path"
-                Set-Acl @PSBoundParameters -AclObject $acl 
-            }#END IF
+	            #Give the Owner the Full access on the Folder
+	            $dirAce = New-Object -TypeName System.Security.AccessControl.FileSystemAccessRule -ArgumentList "$env:Username","FullControl", "ContainerInherit, ObjectInherit", "None", "Allow"
+	            $acl.AddAccessRule($dirAce)
+	            
+	            #now compare the Access on the Path to the Access we are giving...if there is a change then only set it
+	            IF ((Compare-Object -ReferenceObject (Get-Acl -Path $Path -ErrorAction Stop -ErrorVariable ErrorProcessGetAclRefObj).access  -DifferenceObject $acl.access) -or ($acl.Owner -ne (Get-acl -Path $Path -ErrorAction Stop -ErrorVariable ErrorProcessGetAclDifObj).owner ))
+	            {
+	                #set the ACL Now as it seems to be modified
+	                Write-Verbose -Message "[PROCESS] Setting the modified ACL to the $Path"
+	                Set-Acl @PSBoundParameters -AclObject $acl -ErrorAction 'Stop' -ErrorVariable ErrorProcessSetAcl
+	            }#END IF
 
-            IF ($Encrypt)
-            {
-                Write-Verbose -Message "[PROCESS] Checkig if the folder $Path is encrypted now"
-                IF ((Get-ItemProperty -Path $Path).attributes -match "Encrypted")
-                {
-                    Write-Verbose -Message "[PROCESS] The Folder $Path is already encrypted"
-                } #End IF
-                ELSE
-                {
-                   TRY
-                   { 
-                        Write-Verbose -Message "[PROCESS] Trying to Encrypt the $Path"
-                        #Set ErrorActionPreference to Stop to catch exceptions from cipher.exe
-                        $ErrorActionPreference = 'stop'
-                        & cipher.exe /E $Path  
-                        Write-Verbose -Message "[PROCESS] The folder $Path has been encrypted"
-                   }#TRY
-                   CATCH
-                   {
-                        Write-Warning -Message "[PROCESS] Something went wrong while trying to encrypt $path"
-                        Write-Error -message  $($_.exception )
-                   }#End Catch
-                }#end Else
-            }#End IF
+	            IF ($Encrypt)
+	            {
+	                Write-Verbose -Message "[PROCESS] Checkig if the folder $Path is encrypted now"
+	                IF ((Get-ItemProperty -Path $Path).attributes -match "Encrypted")
+	                {
+	                    Write-Verbose -Message "[PROCESS] The Folder $Path is already encrypted"
+	                } #End IF
+	                ELSE
+	                {
+	                   TRY
+	                   { 
+	                        Write-Verbose -Message "[PROCESS] Trying to Encrypt the $Path"
+	                        #Set ErrorActionPreference to Stop to catch exceptions from cipher.exe
+	                        $ErrorActionPreference = 'stop'
+	                        & cipher.exe /E $Path  
+	                        Write-Verbose -Message "[PROCESS] The folder $Path has been encrypted"
+	                   }#TRY
+	                   CATCH
+	                   {
+	                        Write-Warning -Message "[PROCESS] Something went wrong while trying to encrypt $path"
+	                        Write-Error -message  $($_.exception )
+	                   }#End Catch
+	                }#end Else
+	            }#End IF
 
-        }#End IF
+	        }#End IF
+		}#TRY
+		CATCH
+		{
+			Write-Warning -Message "[PROCESS] Something went wrong"
+			IF($ErrorProcessGetAcl){Write-Warning -Message "[PROCESS] Error while getting the ACL"}
+			IF($ErrorProcessGetAclRefObj){Write-Warning -Message "[PROCESS] Error while getting the ACL of the Reference Object"}
+			IF($ErrorProcessGetAclDifObj){Write-Warning -Message "[PROCESS] Error while getting the ACL of the Difference Object"}
+			IF($ErrorProcessSetAcl){Write-Warning -Message "[PROCESS] Error while setting the ACL"}
+			Write-Warning -Message $Error[0]
+		}
         
     }#End PROCESS
     END
@@ -204,5 +216,3 @@ function Set-SecurityMeasure
         Write-Verbose -Message "[END] Ending the Function Set-SecurityMeasure"
     }#END
 }#Function Set-SecurityMeasure
-
-#endregion Set-SecurityMeasure
