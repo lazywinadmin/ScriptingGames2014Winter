@@ -217,7 +217,7 @@ function Set-SecurityMeasure
 }#Function Set-SecurityMeasure
 
 function Get-SensitiveInformation {
-    [cmdletbinding()]
+    [CmdletBinding()]
     Param(
         [Parameter(
                   Mandatory,
@@ -256,8 +256,8 @@ function Get-SensitiveInformation {
         $GetRemoteRegistryValues = {
             $item = Get-Item HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\run
 
-            $item | Select-Object -ExpandProperty Property | ForEach-Object {
-                Write-Output (New-Object -TypeName PSCustomObject -Property @{ Name = $_; Value = $item.GetValue($_)})
+            $item | Select-Object -ExpandProperty Property | ForEach-Object -Process {
+                Write-Output -InputObject (New-Object -TypeName PSCustomObject -Property @{ Name = $_; Value = $item.GetValue($_)})
             }
         }
 
@@ -275,10 +275,10 @@ function Get-SensitiveInformation {
                 if (Test-Path "HKCU:$Uninstallx64" ) { Get-ChildItem "HKCU:$Uninstallx64"}
             )
 
-            $Path | ForEach-Object {
-                if (!($Found -contains $_.PSChildName)) {
-                    if ($_.Property -contains "DisplayName") { $ProductLabel = $_.GetValue("DisplayName") } else { $ProductLabel = $_.PSChildName }
-                    Write-Output (New-Object -TypeName PSCustomObject -Property @{ Name = $_.PSChildName; Label = $ProductLabel })
+            $Path | ForEach-Object -Process {
+                IF (!($Found -contains $_.PSChildName)) {
+                    IF ($_.Property -contains "DisplayName") { $ProductLabel = $_.GetValue("DisplayName") } ELSE { $ProductLabel = $_.PSChildName }
+                    Write-Output -InputObject (New-Object -TypeName PSCustomObject -Property @{ Name = $_.PSChildName; Label = $ProductLabel })
                     $Found += $_.PSChildName
                 }
             }
@@ -302,12 +302,12 @@ function Get-SensitiveInformation {
                     Details = @()
                 }
 
-                If (Test-Path $Folder) {
+                If (Test-Path -Path $Folder) {
                     # We retrieve the content of the given folder
-                    $Content = Get-ChildItem $Folder -Recurse -ErrorAction SilentlyContinue
+                    $Content = Get-ChildItem -Path $Folder -Recurse -ErrorAction SilentlyContinue
 
                     # We retrieve the size of that folder - TODO try catch on empty folders, if only folders -> 0mb
-                    $Size = $Content | Measure-Object -Property Length -Sum
+                    $Size = Measure-Object -Property Length -Sum -InputObject $Content
                     $Size = "{0:N2}" -f ($Size.Sum / 1MB) + " MB"
 
                     # We retrieve the amount of Files present within the root folder
@@ -318,8 +318,8 @@ function Get-SensitiveInformation {
 
                     # Deep scan?
                     If ($DeepScan) {
-                        $Content | Where-Object {-not $_.PSIsContainer} | ForEach-Object {
-                            $File = $_ | Select FullName, Length, LastWriteTime
+                        $Content | Where-Object {-not $_.PSIsContainer} | ForEach-Object -Process {
+                            $File = $_ | Select-Object -Property FullName, Length, LastWriteTime
                             $Hash = ""
 
                             If ($HashFiles) {
@@ -342,8 +342,8 @@ function Get-SensitiveInformation {
                         }
                     }
 
-                    Write-Output - $Scan
-                } else {
+                    Write-Output -InputObject $Scan
+                } ELSE {
                     Write-Warning -Message "[PROCESS] Folder $Folder does not exist on the current system"
                 }
             }
@@ -449,8 +449,9 @@ function Get-SensitiveInformation {
                 } | Export-Clixml -Path $FileOutput
 
             } Catch {
+				Write-Warning -Message "[PROCESS] Something went wrong"
                 If ($ProcessErrorTestConnection){ Write-Warning -Message "[PROCESS] Computer Unreachable: $Computer" }
-                write-host $error[0] # debug
+                Write-Warning -Message $error[0] # debug
             } Finally {
                 If ($CimSession) {
                     Write-Verbose "[PROCESS] Removing CIM Session from: $Computer"
