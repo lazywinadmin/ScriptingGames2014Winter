@@ -254,15 +254,20 @@ function Get-SensitiveInformation {
 
         # Expression to get some registry values
         $GetRemoteRegistryValues = {
-            $Registryitems= "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\run",
-							"HKLM:\\Software\Microsoft\Windows\CurrentVersion\Run",
+            $RegistryItems=	"HKLM:\\Software\Microsoft\Windows\CurrentVersion\Run",
 							"HKLM:\\Software\Microsoft\Windows\CurrentVersion\RunOnce",
 							"HKLM:\\Software\Microsoft\Windows\CurrentVersion\RunOnceEx",
 							"HKLM:\\Software\Microsoft\Windows\CurrentVersion\RunServices",
 							"HKLM:\\Software\Microsoft\Windows\CurrentVersion\RunServicesOnce",
-							"HKLM:\\Software\Microsoft\WindowsNT\CurrentVersion\Winlogon"
-
-            Get-Item -Path $Registryitems | Select-Object -ExpandProperty Property | ForEach-Object -Process {
+							"HKLM:\\Software\Microsoft\WindowsNT\CurrentVersion\Winlogon",
+							"HKCU:\\Software\Microsoft\Windows\CurrentVersion\Run",
+							"HKCU:\\Software\Microsoft\Windows\CurrentVersion\RunOnce",
+							"HKCU:\\Software\Microsoft\Windows\CurrentVersion\RunOnceEx",
+							"HKCU:\\Software\Microsoft\Windows\CurrentVersion\RunServices",
+							"HKCU:\\Software\Microsoft\Windows\CurrentVersion\RunServicesOnce",
+							"HKCU:\\Software\Microsoft\WindowsNT\CurrentVersion\Winlogon"
+							
+            Get-Item -Path $Registryitems -ErrorAction 'SilentlyContinue' | Select-Object -ExpandProperty Property | ForEach-Object -Process {
                 Write-Output -InputObject (New-Object -TypeName PSCustomObject -Property @{ Name = $_; Value = $item.GetValue($_)})
             }
         }
