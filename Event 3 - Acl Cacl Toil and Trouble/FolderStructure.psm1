@@ -6,6 +6,7 @@ Parameter: -Path
 	Validate: Path lenght
 Parameter: -Name
 	Validate Name does not contain forbidden caractere by window
+	http://msdn.microsoft.com/en-us/library/windows/desktop/aa365247(v=vs.85).aspx#naming_conventions
 	Validate a AD Group exist for this name
 Parameter: -XMLConfiguration (specifies file that contains the permissions to apply)
 	Validate: Test-Path
@@ -13,18 +14,55 @@ Parameter: -XMLConfiguration (specifies file that contains the permissions to ap
 #>
 	[CmdletBinding()]
 	PARAM(
+		[Parameter(Mandatory)]
+		[ValidateScript({Test-Path -Path $_})]
 		$Path,
+	
+		[Parameter(Mandatory)]
+		[ValidateScript({
+			IF ($_ -match '@"^(?!^(PRN|AUX|CLOCK\$|NUL|CON|COM\d|LPT\d|\..*)(\..+)?$)[^\x00-\x1f\\?*:\"";|/]+$') {$True}
+			ELSE {Throw "$_ is either not a valid name for a directory or it is not recommended. See this MSDN article for more information: http://msdn.microsoft.com/en-us/library/windows/desktop/aa365247(v=vs.85).aspx#naming_conventions"}
+		})]
 		$Name,
+	
+		[Parameter(Mandatory)]
+		[ValidateScript({Test-Path -Path $_})]
 		$XMLConfiguration
 	)#PARAM
 	BEGIN
 	{
-		TRY{}#TRY Block
+		TRY{
+			#Validate the XML, if not valid, ask the user to run Get-FolderStructure with XML. Or ask questions ?
+			
+			
+			IF(-not(Test-Path -Path (Join-Path -Path $Path -ChildPath $Name)){
+				Write-Verbose -Message "[BEGIN] Create the folder $Name"
+				New-Item -Path $Path -ItemType "Directory" -Value $Name -Force
+			}
+			
+			}#TRY Block
 		CATCH{}#CATCH Block
 	}#BEGIN Block
 	PROCESS
 	{
-		TRY{}#TRY Block
+		TRY{
+			#$Directories = Get-ChildItem $Source -Recurse -Directory
+			$ImportXML = Import-Clixml -Path $XMLConfiguration
+			$XMLSource = ($ImportXML |Select-Object -First 1).fullname
+			$Destination = (Join-Path -Path $Path -ChildPath $Name)
+
+			FOREACH ($Directory in $ImportXML)
+			{
+				$TargetDirectory = ($dir.Fullname -replace [regex]::Escape($XMLSource), $Destination)
+				IF (-not(Test-Path -Path $TargetDirectory))
+				{
+					Write-Verbose -Message "Creation of $TargetDirectory"
+					New-Item -itemtype "Directory" $TargetDirectory -force
+				}#IF (-not(Test-Path -Path $TargetDirectory))
+				
+			}#FOREACH ($Directory in $ImportXML)
+			
+		}#TRY Block
 		CATCH{
 			Write-Warning -Message "[PROCESS] Something went wrong !"
 			Write-Warning -Message $Error[0]	
