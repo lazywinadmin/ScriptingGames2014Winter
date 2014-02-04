@@ -130,7 +130,21 @@ Parameter: -LogPath (must contains the date)
 	}#BEGIN Block
 	PROCESS
 	{
-		TRY{}#TRY Block
+		TRY{
+			
+			#http://www.be-init.nl/blog/7531/set-acl-through-powershell
+			# Get ACL info on a folder
+			$NewAcl = Get-ACL D:\Software
+			#Now that we have a point of reference and saved it to a variable, we can use this information when setting the ACL on whatever target (and all it’s sub files and folders by using the –recurse parameter) we specify with the following command:
+			Get-ChildItem D:\Pictures -recurse | Set-ACL –ACLObject $NewACL
+
+			#But what if you only want to set the ACL for specific files, for example all files with the .pptx extension?
+			Get-ChildItem D:\Pictures –recurse –include *.pptx –force | Set-ACL –ACLObject $NewACL
+			
+			
+			
+			
+		}#TRY Block
 		CATCH{
 			Write-Warning -Message "[PROCESS] Something went wrong !"
 			Write-Warning -Message $Error[0]	
