@@ -1,5 +1,5 @@
 ﻿<#
-	Module manifest for module 'MyModule'
+	Module manifest for module 'FolderStructure'
 
 	NOTE: This file should be saved with the same name as your module and a psd1
 	file extension.

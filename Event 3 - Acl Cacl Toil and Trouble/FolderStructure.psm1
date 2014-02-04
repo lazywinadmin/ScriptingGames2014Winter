@@ -25,7 +25,10 @@ Parameter: -XMLConfiguration (specifies file that contains the permissions to ap
 	PROCESS
 	{
 		TRY{}#TRY Block
-		CATCH{}#CATCH Block	
+		CATCH{
+			Write-Warning -Message "[PROCESS] Something went wrong !"
+			Write-Warning -Message $Error[0]	
+		}#CATCH Block	
 	}#PROCESS Block
 	END
 	{
@@ -55,7 +58,10 @@ Parameter: -OutputXMLConfiguration (generate xml config output of the ACL, this 
 	PROCESS
 	{
 		TRY{}#TRY Block
-		CATCH{}#CATCH Block	
+		CATCH{
+			Write-Warning -Message "[PROCESS] Something went wrong !"
+			Write-Warning -Message $Error[0]
+		}#CATCH Block	
 	}#PROCESS Block
 	END
 	{
@@ -76,7 +82,8 @@ Parameter: -LogPath (must contains the date)
 	[CmdletBinding()]
 	PARAM(
 		$Path,
-		$OutputXMLConfiguration
+		$LogPath,
+		$XMLConfiguration
 	)#PARAM
 	BEGIN
 	{
@@ -86,7 +93,10 @@ Parameter: -LogPath (must contains the date)
 	PROCESS
 	{
 		TRY{}#TRY Block
-		CATCH{}#CATCH Block	
+		CATCH{
+			Write-Warning -Message "[PROCESS] Something went wrong !"
+			Write-Warning -Message $Error[0]	
+		}#CATCH Block	
 	}#PROCESS Block
 	END
 	{
@@ -107,8 +117,7 @@ Validate: Test-Path
 	[CmdletBinding()]
 	PARAM(
 		$Path,
-		$Name,
-		$XMLConfiguration
+		$OutputXMLConfiguration
 	)#PARAM
 	BEGIN
 	{
@@ -118,7 +127,10 @@ Validate: Test-Path
 	PROCESS
 	{
 		TRY{}#TRY Block
-		CATCH{}#CATCH Block	
+		CATCH{
+			Write-Warning -Message "[PROCESS] Something went wrong !"
+			Write-Warning -Message $Error[0]	
+		}#CATCH Block	
 	}#PROCESS Block
 	END
 	{
@@ -133,19 +145,18 @@ Function Compare-FolderStructurePermission
 <#(Compare current and (Import of XML)
 Parameter: -Path
 Validate: Test-Path
-#>
 	
-}#Function Compare-FolderStructurePermission
-
-Function Report-FolderStructure
-{
-<#-HTML -CSV
-Parameter: -InputObject
+Should be able to pass info to RESTORE-FolderStructurepermission
 #>
 	[CmdletBinding()]
 	PARAM(
-		$Path,
-		$OutputXMLConfiguration
+		[Parameter(Mandatory,ParameterSetName="PathsCompare")]
+		[Parameter(Mandatory,ParameterSetName="XML")]
+		$ReferencePath,
+		[Parameter(Mandatory,ParameterSetName="PathsCompare")]
+		$DifferencePath,
+		[Parameter(Mandatory,ParameterSetName="XML")]
+		$XMLConfiguration
 	)#PARAM
 	BEGIN
 	{
@@ -155,7 +166,39 @@ Parameter: -InputObject
 	PROCESS
 	{
 		TRY{}#TRY Block
+		CATCH{
+			Write-Warning -Message "[PROCESS] Something went wrong !"
+			Write-Warning -Message $Error[0]	
+		}#CATCH Block	
+	}#PROCESS Block
+	END
+	{
+		TRY{}#TRY Block
 		CATCH{}#CATCH Block	
+	}#END Block	
+}#Function Compare-FolderStructurePermission
+
+Function Report-FolderStructure
+{
+<#-HTML -CSV
+Parameter: -Path
+#>
+	[CmdletBinding()]
+	PARAM(
+		$Path
+	)#PARAM
+	BEGIN
+	{
+		TRY{}#TRY Block
+		CATCH{}#CATCH Block
+	}#BEGIN Block
+	PROCESS
+	{
+		TRY{}#TRY Block
+		CATCH{
+			Write-Warning -Message "[PROCESS] Something went wrong !"
+			Write-Warning -Message $Error[0]	
+		}#CATCH Block	
 	}#PROCESS Block
 	END
 	{
@@ -175,7 +218,7 @@ Validate: Format
 	[CmdletBinding()]
 	PARAM(
 		$Path,
-		$OutputXMLConfiguration
+		$XMLConfiguration
 	)#PARAM
 	BEGIN
 	{
@@ -185,7 +228,10 @@ Validate: Format
 	PROCESS
 	{
 		TRY{}#TRY Block
-		CATCH{}#CATCH Block	
+		CATCH{
+			Write-Warning -Message "[PROCESS] Something went wrong !"
+			Write-Warning -Message $Error[0]	
+		}#CATCH Block	
 	}#PROCESS Block
 	END
 	{
@@ -205,7 +251,7 @@ Validate: Format
 	[CmdletBinding()]
 	PARAM(
 		$Path,
-		$OutputXMLConfiguration
+		$XMLConfiguration
 	)#PARAM
 	BEGIN
 	{
@@ -215,7 +261,10 @@ Validate: Format
 	PROCESS
 	{
 		TRY{}#TRY Block
-		CATCH{}#CATCH Block	
+		CATCH{
+			Write-Warning -Message "[PROCESS] Something went wrong !"
+			Write-Warning -Message $Error[0]	
+		}#CATCH Block	
 	}#PROCESS Block
 	END
 	{
