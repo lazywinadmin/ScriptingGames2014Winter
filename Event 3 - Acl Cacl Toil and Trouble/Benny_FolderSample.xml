@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 
+	Enumerator:: http://msdn.microsoft.com/en-us/library/system.security.accesscontrol.filesystemrights(v=vs.110).aspx 
+	Working with XML:: http://technet.microsoft.com/en-us/library/hh849968.aspx
+-->
+<Folders>
+  <Folder Name="Finance">
+	<ACL Access="Read">MYDOMAIN\Authenticated Users</ACL>
+	<ACL Access="Read" Propagate=1>MYDOMAIN\Finance Audit</ACL>
+	
+	<Folder Name="Finance Open">
+	  <ACL Access="Read" Propagate=1>MYDOMAIN\Authenticated Users</ACL>
+      <ACL Access="Read, Write" Propagate=1>MYDOMAIN\Finance</ACL>
+    </Folder>
+	
+	<Folder Name="RECEIPTS">
+      <ACL Access="Read" Propagate=1>MYDOMAIN\Finance</ACL>
+      <ACL Access="Read, Write" Propagate=1>MYDOMAIN\Finance Receipt</ACL>
+    </Folder>
+  </Folder>
+</Folders>
