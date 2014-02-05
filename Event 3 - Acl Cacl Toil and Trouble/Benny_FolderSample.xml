@@ -5,11 +5,11 @@
 -->
 <Folders>
   <Folder Label="Finance">
-	<ACL Access="Read">MYDOMAIN\Authenticated Users</ACL>
-	<ACL Access="Read" Propagate="1">MYDOMAIN\Finance Audit</ACL>
+    <ACL Access="Read">MYDOMAIN\Authenticated Users</ACL>
+    <ACL Access="Read" Propagate="1">MYDOMAIN\Finance Audit</ACL>
 	
     <Folder Label="Finance Open">
-	  <ACL Access="Read" Propagate="1">MYDOMAIN\Authenticated Users</ACL>
+      <ACL Access="Read" Propagate="1">MYDOMAIN\Authenticated Users</ACL>
       <ACL Access="Read, Write" Propagate="1">MYDOMAIN\Finance</ACL>
     </Folder>
 	
