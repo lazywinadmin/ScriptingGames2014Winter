@@ -4,18 +4,18 @@
 	Working with XML:: http://technet.microsoft.com/en-us/library/hh849968.aspx
 -->
 <Folders>
-  <Folder Name="Finance">
-    <ACL Access="Read">MYDOMAIN\Authenticated Users</ACL>
-    <ACL Access="Read" Propagate=1>MYDOMAIN\Finance Audit</ACL>
+  <Folder Label="Finance">
+	<ACL Access="Read">MYDOMAIN\Authenticated Users</ACL>
+	<ACL Access="Read" Propagate="1">MYDOMAIN\Finance Audit</ACL>
 	
-    <Folder Name="Finance Open">
-      <ACL Access="Read" Propagate=1>MYDOMAIN\Authenticated Users</ACL>
-      <ACL Access="Read, Write" Propagate=1>MYDOMAIN\Finance</ACL>
+	<Folder Label="Finance Open">
+	  <ACL Access="Read" Propagate="1">MYDOMAIN\Authenticated Users</ACL>
+      <ACL Access="Read, Write" Propagate="1">MYDOMAIN\Finance</ACL>
     </Folder>
 	
-    <Folder Name="RECEIPTS">
-      <ACL Access="Read" Propagate=1>MYDOMAIN\Finance</ACL>
-      <ACL Access="Read, Write" Propagate=1>MYDOMAIN\Finance Receipt</ACL>
+	<Folder Label="RECEIPTS">
+      <ACL Access="Read" Propagate="1">MYDOMAIN\Finance</ACL>
+      <ACL Access="Read, Write" Propagate="1">MYDOMAIN\Finance Receipt</ACL>
     </Folder>
   </Folder>
 </Folders>
