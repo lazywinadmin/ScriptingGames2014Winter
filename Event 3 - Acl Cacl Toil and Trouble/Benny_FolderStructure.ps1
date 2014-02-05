@@ -71,19 +71,35 @@ Function New-FolderStructure {
                         Write-Verbose -Message "[PROCESS] Processing an ACL node for Folder: '$FolderPath'"
 
                         # Make sure that we have something to apply on the given ACL
-                        
                         $ApplyTo = $XMLNode.InnerText.Trim()
                         If (($ApplyTo -ne "") -and ($ApplyTo -match "^([a-zA-Z\\\s\._-]+)$")) {
                             If ($XMLNode.HasAttribute("Access")) {
                                 $Access = $XMLNode.Access.Split(",")
+                                $ExistingACLs = Get-Acl -Path $FolderPath
+                                
+                                # We check whether this ACL is supposed to "allow" or "deny" the given rights. Allow by default
+                                $Action = "Allow"
+                                If ($XMLNode.HasAttribute("Action")) {
+                                    If ("Allow", "Deny" -contains $XMLNode.Action) {$Action = $XMLNode.Action}
+                                }
+                                
+                                # We retrieve the flat rights assigned to the current entity
+                                $CurrentRights = $ExistingACLs.Access | Where-Object {($_.AccessControlType -eq $Action) -and ($_.IdentityReference -eq $ApplyTo)} | ForEach-Object {$_.FileSystemRights}
 
                                 ForEach ($ACL in $Access) {
                                     $EffectiveACL = $ACL.Trim()
-                                    If ($EffectiveACL -match "^([a-zA-Z]+)$") {
-                                        # Todo: check if ACL is already set or not forgiven user/group
-                                        Write-Verbose -Message "  [PROCESS] Applying ACL: '$EffectiveACL' for: '$ApplyTo'"
+
+                                    # Our ACL is already applied?
+                                    If (-not($CurrentRights -contains $ACL)) {
+
+                                        If ($EffectiveACL -match "^([a-zA-Z]+)$") {
+                                            Write-Verbose -Message "  [PROCESS] Applying ACL: '$EffectiveACL' for: '$ApplyTo'"
+                                            #TODO: Assign ACL here
+                                        } else {
+                                            Write-Error -Message "[PROCESS] Invalid ACL format used: '$EffectiveACL'"
+                                        }
                                     } else {
-                                        Write-Error -Message "[PROCESS] Invalid ACL format used: '$EffectiveACL'"
+                                        Write-Verbose -Message "  [PROCESS] ACL '$EffectiveACL' is already applied for '$ApplyTo'"
                                     }
                                 }
                             } else {
