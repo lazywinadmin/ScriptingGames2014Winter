@@ -67,41 +67,6 @@ Function New-FolderStructure {
                 $FolderPath
             )
 
-            BEGIN {
-                $UpdateACL = $false
-
-                $ACL = Get-Acl -Path $FolderPath
-
-                # Attributes?
-                $Propagate = Get-XMLAttribute -XMLNode $FolderNode -Attribute "Propagate" -Default "Yes" -ValidValues "Yes", "No"
-                $Inherit = Get-XMLAttribute -XMLNode $FolderNode -Attribute "Inherit" -Default "Yes" -ValidValues "Yes", "No"
-                
-
-            }
-
-            PROCESS {
-                $Account = $ACLNode.InnerText.Trim()
-
-                If (($Account -ne "") -and ($Account -match "^([a-zA-Z0-9\\\s\._-]+)$")) {
-                    If ($ACLNode.HasAttribute("Access")) {
-                        $ACEs = $ACLNode.Access.Split(",")
-
-                        $Action = Get-XMLAttribute -XMLNode $ACLNode -Attribute "Action" -Default "Allow" -ValidValues "Allow", "Deny"
-                        $ACEFlat = ($ACL.Access | Where-Object {($_.AccessControlType -eq $Action) -and ($_.IdentityReference -eq $Account)} | ForEach-Object {$_.FileSystemRights}) -join ","
-
-                        #todo check if different 
-                        
-                        #$ACL.SetAccessRuleProtection($false, $true)  #(1: true: block inheritance, false: allow inheritance | 2: true, keep ACE, false: flush ACE)
-
-                        $NewACE = @()
-
-                        ForEach ($ACE in $ACEs) {
-                            $EffectiveACE = $ACE.Trim()
-                            If ($EffectiveACE -match "^([a-zA-Z]+)$") {
-                                If (-not($ACEFlat -match $EffectiveACE)) {
-                                    $NewACE += $EffectiveACE
-                                    
-# Apply Stock ACL on the folder (1: true: block inheritance, false: allow inheritance | 2: true, keep ACE, false: flush ACE)
 <#
 $AACL = New-Object -TypeName 'System.Security.AccessControl.FileSystemAccessRule' -ArgumentList 'GCM2000\brouleau', 'FullControl', 'ContainerInherit,ObjectInherit', 'NoPropagateInherit', 'Allow'
 $BACL = New-Object -TypeName 'System.Security.AccessControl.FileSystemAccessRule' -ArgumentList 'BUILTIN\Administrateurs', 'FullControl', 'ContainerInherit,ObjectInherit', 'NoPropagateInherit', 'Allow'
@@ -114,6 +79,42 @@ $ACL.SetAccessRuleProtection($InheritBlockFlag, $PropagateFlag)
                                 
 Set-Acl -Path $NewPath -AclObject $ACL
 #>
+
+            BEGIN {
+                $UpdateACL = $false
+
+                $ACL = Get-Acl -Path $FolderPath
+
+                # Attributes?
+                $Propagate = Get-XMLAttribute -XMLNode $FolderNode -Attribute "Propagate" -Default "Yes" -ValidValues "Yes", "No"
+                $Inherit = Get-XMLAttribute -XMLNode $FolderNode -Attribute "Inherit" -Default "Yes" -ValidValues "Yes", "No"
+                
+                #http://msdn.microsoft.com/en-us/library/system.security.accesscontrol.objectsecurity.setaccessruleprotection%28v=vs.110%29.aspx
+                # todo: use acl.areblablaprotected to check whether we need to use SetAccessRuleProtection or not
+                #$ACL.SetAccessRuleProtection($false, $true)  #(1: true: block inheritance, false: allow inheritance | 2: true, keep ACE, false: flush ACE)
+            }
+
+            PROCESS {
+                $Account = $ACLNode.InnerText.Trim()
+
+                # Our given account has to be valid
+                If (($Account -ne "") -and ($Account -match "^([a-zA-Z0-9\\\s\._-]+)$")) {
+                    # An access attribute is required on the XML
+                    If ($ACLNode.HasAttribute("Access")) {
+                        $ACEs = $ACLNode.Access.Split(",")
+
+                        $Action = Get-XMLAttribute -XMLNode $ACLNode -Attribute "Action" -Default "Allow" -ValidValues "Allow", "Deny"
+                        $ACEFlat = ($ACL.Access | Where-Object {($_.AccessControlType -eq $Action) -and ($_.IdentityReference -eq $Account)} | ForEach-Object {$_.FileSystemRights}) -join ","
+
+                        $NewACE = @()
+                        
+                        # We iterate thru all of the given ACE and check for missing ones.
+                        ForEach ($ACE in $ACEs) {
+                            $EffectiveACE = $ACE.Trim()
+                            # TODO: ACL is within the given list: http://msdn.microsoft.com/en-us/library/system.security.accesscontrol.filesystemrights%28v=vs.110%29.aspx
+                            If ($EffectiveACE -match "^([a-zA-Z]+)$") {
+                                If (-not($ACEFlat -match $EffectiveACE)) {
+                                    $NewACE += $EffectiveACE
                                 } else {
                                     Write-Verbose -Message "[PROCESS] ACE '$EffectiveACE' is already applied to account: '$Account'"
                                 }
@@ -122,6 +123,7 @@ Set-Acl -Path $NewPath -AclObject $ACL
                             }
                         }
 
+                        # If we have a missing ACE then we create a new Access Rule and apply it to the existing ACL
                         If ($NewACE -gt 0) {
                             Write-Verbose -Message "[PROCESS] Adding ACLs: '$($NewACE -join ",")' to account: '$Account'"
                             $nACL = New-Object -TypeName 'System.Security.AccessControl.FileSystemAccessRule' -ArgumentList $Account, @($NewACE -join ","), 'ContainerInherit,ObjectInherit', 'None', $Action
@@ -137,6 +139,7 @@ Set-Acl -Path $NewPath -AclObject $ACL
             }
 
             END {
+                # Only update the ACL if needed
                 If ($UpdateACL) {
                     Write-Verbose -Message "[END] Applying ACL"
                     Set-Acl -Path $FolderPath -AclObject $ACL
@@ -163,8 +166,10 @@ Set-Acl -Path $NewPath -AclObject $ACL
             }
 
             PROCESS {
+                # Our folder need to have a label
                 If ($FolderNode.HasAttribute("Label")) {
                     $Label = $FolderNode.Label
+                    # Make sure that our folder is compliant
                     If ($Label -match "^([a-zA-Z0-9\s\._-]+)$") {
                         $NewPath = Join-Path -Path $FolderPath -ChildPath $Label
 
@@ -176,14 +181,10 @@ Set-Acl -Path $NewPath -AclObject $ACL
                             Write-Verbose -Message "  [PROCESS] Folder: '$NewPath' already exist, skipping creation"
                         }
 
-                        # Attributes?
-                        #$Propagate = Get-XMLAttribute -XMLNode $FolderNode -Attribute "Propagate" -Default "Yes" -ValidValues "Yes", "No"
-                        #$Inherit = Get-XMLAttribute -XMLNode $FolderNode -Attribute "Inherit" -Default "Yes" -ValidValues "Yes", "No"
-
                         # The folder has ACL nodes?
                         $FolderNode.ChildNodes | Where-Object {$_.LocalName -eq "ACL"} | Process-XMLACL -FolderNode $FolderNode -FolderPath $NewPath
                 
-                        # We have more folders?
+                        # We have more nested folders?
                         $FolderNode.ChildNodes | Where-Object {$_.LocalName -eq "Folder"} | Process-XMLFolder -FolderPath $NewPath
                     } else {
                         Write-Error -Message "[PROCESS] Invalid XML Folder label: '$Label'"
