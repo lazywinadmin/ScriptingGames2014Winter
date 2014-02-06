@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 
+	Enumerator:: http://msdn.microsoft.com/en-us/library/system.security.accesscontrol.filesystemrights(v=vs.110).aspx 
+	Working with XML:: http://technet.microsoft.com/en-us/library/hh849968.aspx
+-->
+<Folders>
+  <Folder Label="Finance" Inherit="No" Propagate="No">
+    <ACL Access="Read">GCM2000\Domain Users</ACL>
+    <ACL Access="Read">GCM2000\Audit interne</ACL>
+	
+    <Folder Label="Finance Open">
+      <ACL Access="Read">GCM2000\Domain Users</ACL>
+      <ACL Access="Read, Write">GCM2000\DOSIL</ACL>
+    </Folder>
+	
+    <Folder Label="RECEIPTS" Inherit="No">
+      <ACL Access="Read">GCM2000\DOSIL</ACL>
+      <ACL Access="Read, Write">GCM2000\DOSIL Site Caen</ACL>
+	  
+      <Folder Label="Shared" Inherit="No">
+        <ACL Access="Read">GCM2000\DOSIL</ACL>
+        <ACL Access="Read, Write">GCM2000\DOSIL Site Caen</ACL>
+      </Folder>
+	  
+      <Folder Label="Private" Inherit="No">
+        <ACL Access="Read, Write, Create, Delete">GCM2000\DOSIL Site Caen</ACL>
+      </Folder>
+	  
+      <Folder Label="Lead" Inherit="No">
+        <ACL Access="Read, Write">GCM2000\DOSIL Site Le Mans</ACL>
+      </Folder>
+    </Folder>
+  </Folder>
+</Folders>
