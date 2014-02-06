@@ -68,7 +68,15 @@ Function New-FolderStructure {
             )
 
             BEGIN {
+                $UpdateACL = $false
+
+                $ACL = Get-Acl -Path $FolderPath
+
+                # Attributes?
+                $Propagate = Get-XMLAttribute -XMLNode $FolderNode -Attribute "Propagate" -Default "Yes" -ValidValues "Yes", "No"
+                $Inherit = Get-XMLAttribute -XMLNode $FolderNode -Attribute "Inherit" -Default "Yes" -ValidValues "Yes", "No"
                 
+
             }
 
             PROCESS {
@@ -77,15 +85,22 @@ Function New-FolderStructure {
                 If (($Account -ne "") -and ($Account -match "^([a-zA-Z0-9\\\s\._-]+)$")) {
                     If ($ACLNode.HasAttribute("Access")) {
                         $ACEs = $ACLNode.Access.Split(",")
-                        $ACL = Get-Acl -Path $FolderPath
 
                         $Action = Get-XMLAttribute -XMLNode $ACLNode -Attribute "Action" -Default "Allow" -ValidValues "Allow", "Deny"
-                        $ACEFlat = $ACL.Access | Where-Object {($_.AccessControlType -eq $Action) -and ($_.IdentityReference -eq $Account)} | ForEach-Object {$_.FileSystemRights}
+                        $ACEFlat = ($ACL.Access | Where-Object {($_.AccessControlType -eq $Action) -and ($_.IdentityReference -eq $Account)} | ForEach-Object {$_.FileSystemRights}) -join ","
+
+                        #todo check if different 
+                        
+                        #$ACL.SetAccessRuleProtection($false, $true)  #(1: true: block inheritance, false: allow inheritance | 2: true, keep ACE, false: flush ACE)
+
+                        $NewACE = @()
 
                         ForEach ($ACE in $ACEs) {
                             $EffectiveACE = $ACE.Trim()
-                            If ($EffectiveACL -match "^([a-zA-Z]+)$") {
-                                If (-not($ACEFlat -contains $EffectiveACE)) {
+                            If ($EffectiveACE -match "^([a-zA-Z]+)$") {
+                                If (-not($ACEFlat -match $EffectiveACE)) {
+                                    $NewACE += $EffectiveACE
+                                    
 # Apply Stock ACL on the folder (1: true: block inheritance, false: allow inheritance | 2: true, keep ACE, false: flush ACE)
 <#
 $AACL = New-Object -TypeName 'System.Security.AccessControl.FileSystemAccessRule' -ArgumentList 'GCM2000\brouleau', 'FullControl', 'ContainerInherit,ObjectInherit', 'NoPropagateInherit', 'Allow'
@@ -100,15 +115,19 @@ $ACL.SetAccessRuleProtection($InheritBlockFlag, $PropagateFlag)
 Set-Acl -Path $NewPath -AclObject $ACL
 #>
                                 } else {
-                                    Write-Verbose -Message "[PROCESS] ACE '$EffectiveACE' is already applied to '$Account'"
+                                    Write-Verbose -Message "[PROCESS] ACE '$EffectiveACE' is already applied to account: '$Account'"
                                 }
                             } else {
-                                Write-Error -Message "[PROCESS] Invalid ACE format: $EffectiveACE"
+                                Write-Error -Message "[PROCESS] Invalid ACE format: '$EffectiveACE'"
                             }
                         }
 
-                        
-                        #Write-Verbose -Message "$($ACLNode.InnerText)"
+                        If ($NewACE -gt 0) {
+                            Write-Verbose -Message "[PROCESS] Adding ACLs: '$($NewACE -join ",")' to account: '$Account'"
+                            $nACL = New-Object -TypeName 'System.Security.AccessControl.FileSystemAccessRule' -ArgumentList $Account, @($NewACE -join ","), 'ContainerInherit,ObjectInherit', 'None', $Action
+                            $ACL.AddAccessRule($nACL)
+                            $UpdateACL = $true
+                        }
                     } else {
                         Write-Error -Message "[PROCESS] The ACL does not have any Access attribute"
                     }
@@ -118,7 +137,10 @@ Set-Acl -Path $NewPath -AclObject $ACL
             }
 
             END {
-
+                If ($UpdateACL) {
+                    Write-Verbose -Message "[END] Applying ACL"
+                    Set-Acl -Path $FolderPath -AclObject $ACL
+                }
             }
         }
         
@@ -155,8 +177,8 @@ Set-Acl -Path $NewPath -AclObject $ACL
                         }
 
                         # Attributes?
-                        $Propagate = Get-XMLAttribute -XMLNode $FolderNode -Attribute "Propagate" -Default "Yes" -ValidValues "Yes", "No"
-                        $Inherit = Get-XMLAttribute -XMLNode $FolderNode -Attribute "Inherit" -Default "Yes" -ValidValues "Yes", "No"
+                        #$Propagate = Get-XMLAttribute -XMLNode $FolderNode -Attribute "Propagate" -Default "Yes" -ValidValues "Yes", "No"
+                        #$Inherit = Get-XMLAttribute -XMLNode $FolderNode -Attribute "Inherit" -Default "Yes" -ValidValues "Yes", "No"
 
                         # The folder has ACL nodes?
                         $FolderNode.ChildNodes | Where-Object {$_.LocalName -eq "ACL"} | Process-XMLACL -FolderNode $FolderNode -FolderPath $NewPath
