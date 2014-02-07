@@ -86,6 +86,8 @@ Function New-FolderStructure {
                     $ACL.SetAccessRuleProtection($AllowInherit, $false)
                     $UpdateACL = $true
                 }
+
+                $ACEWhiteList = "ListDirectory", "ReadData", "WriteData", "CreateFiles", "CreateDirectories", "AppendData", "ReadExtendedAttributes", "WriteExtendedAttributes", "Traverse", "ExecuteFile", "DeleteSubdirectoriesAndFiles", "ReadAttributes", "WriteAttributes", "Write", "Delete", "ReadPermissions", "Read", "ReadAndExecute", "Modify", "ChangePermissions", "TakeOwnership", "Synchronize", "FullControl"
             }
 
             PROCESS {
@@ -106,14 +108,14 @@ Function New-FolderStructure {
                         ForEach ($ACE in $ACEs) {
                             $EffectiveACE = $ACE.Trim()
                             # TODO: ACL is within the given list: http://msdn.microsoft.com/en-us/library/system.security.accesscontrol.filesystemrights%28v=vs.110%29.aspx
-                            If ($EffectiveACE -match "^([a-zA-Z]+)$") {
+                            If ($ACEWhiteList -contains $EffectiveACE) {
                                 If (-not($ACEFlat -match $EffectiveACE)) {
                                     $NewACE += $EffectiveACE
                                 } else {
                                     Write-Verbose -Message "  [PROCESS] ACE '$EffectiveACE' is already applied to account: '$Account'"
                                 }
                             } else {
-                                Write-Error -Message "[PROCESS] Invalid ACE format: '$EffectiveACE'"
+                                Write-Error -Message "[PROCESS] Invalid ACE specified: '$EffectiveACE'"
                             }
                         }
 
@@ -138,6 +140,8 @@ Function New-FolderStructure {
                     Write-Verbose -Message "  [END] Applying ACL"
                     Set-Acl -Path $FolderPath -AclObject $ACL
                 }
+
+                $ACL
             }
         }
         
@@ -176,10 +180,16 @@ Function New-FolderStructure {
                         }
 
                         # The folder has ACL nodes?
-                        $FolderNode.ChildNodes | Where-Object {$_.LocalName -eq "ACL"} | Process-XMLACL -FolderNode $FolderNode -FolderPath $NewPath
-                
+                        $ACL = $FolderNode.ChildNodes | Where-Object {$_.LocalName -eq "ACL"} | Process-XMLACL -FolderNode $FolderNode -FolderPath $NewPath
+                        
                         # We have more nested folders?
                         $FolderNode.ChildNodes | Where-Object {$_.LocalName -eq "Folder"} | Process-XMLFolder -FolderPath $NewPath
+
+                        # We create a quick output
+                        $Output = New-Object PSObject -Property @{
+                            ACL = $($ACL | Select Access, AreAccessRulesProtected)
+                            Folder = $NewPath
+                        }
                     } else {
                         Write-Error -Message "[PROCESS] Invalid XML Folder label: '$Label'"
                     }
@@ -189,7 +199,7 @@ Function New-FolderStructure {
             }
 
             END {
-                
+                $Output
             }
         }
         
@@ -208,13 +218,14 @@ Function New-FolderStructure {
             [xml]$XMLInput = Get-Content $XMLConfiguration
             
             # Process each Nodes within the Folders tag
-            $XMLInput.Folders.ChildNodes | Where-Object {$_.LocalName -eq "Folder"} | Process-XMLFolder -FolderPath $Path
+            $Output = $XMLInput.Folders.ChildNodes | Where-Object {$_.LocalName -eq "Folder"} | Process-XMLFolder -FolderPath $Path
         }
     }
 
     END {
-        
+        $Output
     }
 }
 
-New-FolderStructure -Path c:\ps\acl\ -Name Finance -XMLConfiguration $PSScriptRoot\Folders.xml -Verbose
+$xml=New-FolderStructure -Path c:\ps\acl\ -Name Finance -XMLConfiguration $PSScriptRoot\Folders.xml -Verbose | ConvertTo-Xml -NoTypeInformation -Depth 3
+$xml.InnerXml | out-file c:\ps\dump.xml
