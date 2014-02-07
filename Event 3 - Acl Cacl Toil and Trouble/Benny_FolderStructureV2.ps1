@@ -67,31 +67,25 @@ Function New-FolderStructure {
                 $FolderPath
             )
 
-<#
-$AACL = New-Object -TypeName 'System.Security.AccessControl.FileSystemAccessRule' -ArgumentList 'GCM2000\brouleau', 'FullControl', 'ContainerInherit,ObjectInherit', 'NoPropagateInherit', 'Allow'
-$BACL = New-Object -TypeName 'System.Security.AccessControl.FileSystemAccessRule' -ArgumentList 'BUILTIN\Administrateurs', 'FullControl', 'ContainerInherit,ObjectInherit', 'NoPropagateInherit', 'Allow'
-                                
-$ACL = Get-ACL -Path $NewPath
-$ACL.AddAccessRule($AACL)
-$ACL.AddAccessRule($BACL)
-$ACL.SetAccessRuleProtection($InheritBlockFlag, $PropagateFlag)
-                                
-                                
-Set-Acl -Path $NewPath -AclObject $ACL
-#>
-
             BEGIN {
                 $UpdateACL = $false
 
                 $ACL = Get-Acl -Path $FolderPath
 
                 # Attributes?
-                $Propagate = Get-XMLAttribute -XMLNode $FolderNode -Attribute "Propagate" -Default "Yes" -ValidValues "Yes", "No"
-                $Inherit = Get-XMLAttribute -XMLNode $FolderNode -Attribute "Inherit" -Default "Yes" -ValidValues "Yes", "No"
+                $AllowInherit = Get-XMLAttribute -XMLNode $FolderNode -Attribute "Inherit" -Default "Yes" -ValidValues "Yes", "No"
+                $AllowInherit = (@{ "Yes" = $false ; "No" = $true })[$AllowInherit]
                 
-                #http://msdn.microsoft.com/en-us/library/system.security.accesscontrol.objectsecurity.setaccessruleprotection%28v=vs.110%29.aspx
-                # todo: use acl.areblablaprotected to check whether we need to use SetAccessRuleProtection or not
-                #$ACL.SetAccessRuleProtection($false, $true)  #(1: true: block inheritance, false: allow inheritance | 2: true, keep ACE, false: flush ACE)
+                # Here we simply check whether we have to modify the Access Rules Protection regarding inheritance
+                $ACLProtected = $ACL.AreAccessRulesProtected
+                
+                If (($ACLProtected -and !$AllowInherit) -or (!$ACLProtected -and $AllowInherit)) {
+                    Write-Verbose -Message "  [BEGIN] Modifying Inheritance: Blocked -> $AllowInherit"
+
+                    # Access Rules Protection determine whether the folder may inherit from it's parent container or not. (block inheritance, keep ace)
+                    $ACL.SetAccessRuleProtection($AllowInherit, $false)
+                    $UpdateACL = $true
+                }
             }
 
             PROCESS {
@@ -116,7 +110,7 @@ Set-Acl -Path $NewPath -AclObject $ACL
                                 If (-not($ACEFlat -match $EffectiveACE)) {
                                     $NewACE += $EffectiveACE
                                 } else {
-                                    Write-Verbose -Message "[PROCESS] ACE '$EffectiveACE' is already applied to account: '$Account'"
+                                    Write-Verbose -Message "  [PROCESS] ACE '$EffectiveACE' is already applied to account: '$Account'"
                                 }
                             } else {
                                 Write-Error -Message "[PROCESS] Invalid ACE format: '$EffectiveACE'"
@@ -125,7 +119,7 @@ Set-Acl -Path $NewPath -AclObject $ACL
 
                         # If we have a missing ACE then we create a new Access Rule and apply it to the existing ACL
                         If ($NewACE -gt 0) {
-                            Write-Verbose -Message "[PROCESS] Adding ACLs: '$($NewACE -join ",")' to account: '$Account'"
+                            Write-Verbose -Message "  [PROCESS] Adding ACLs: '$($NewACE -join ",")' to account: '$Account'"
                             $nACL = New-Object -TypeName 'System.Security.AccessControl.FileSystemAccessRule' -ArgumentList $Account, @($NewACE -join ","), 'ContainerInherit,ObjectInherit', 'None', $Action
                             $ACL.AddAccessRule($nACL)
                             $UpdateACL = $true
@@ -141,7 +135,7 @@ Set-Acl -Path $NewPath -AclObject $ACL
             END {
                 # Only update the ACL if needed
                 If ($UpdateACL) {
-                    Write-Verbose -Message "[END] Applying ACL"
+                    Write-Verbose -Message "  [END] Applying ACL"
                     Set-Acl -Path $FolderPath -AclObject $ACL
                 }
             }
@@ -175,10 +169,10 @@ Set-Acl -Path $NewPath -AclObject $ACL
 
                         # If the given folder doesn't exist then we create it
                         If (-not(Test-Path -Path $NewPath)) {
-                            Write-Verbose -Message "  [PROCESS] Creating folder: $NewPath"
+                            Write-Verbose -Message "[PROCESS] Creating folder: $NewPath"
                             $Folder = New-Item -Path $NewPath -ItemType "Directory" -Force
                         } else {
-                            Write-Verbose -Message "  [PROCESS] Folder: '$NewPath' already exist, skipping creation"
+                            Write-Verbose -Message "[PROCESS] Folder: '$NewPath' already exist, skipping creation"
                         }
 
                         # The folder has ACL nodes?
@@ -223,4 +217,4 @@ Set-Acl -Path $NewPath -AclObject $ACL
     }
 }
 
-New-FolderStructure -Path c:\ps\acl\ -Name Finance -XMLConfiguration C:\ps\Folders.xml -Verbose
+New-FolderStructure -Path c:\ps\acl\ -Name Finance -XMLConfiguration $PSScriptRoot\Folders.xml -Verbose
