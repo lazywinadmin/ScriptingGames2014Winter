@@ -227,5 +227,129 @@ Function New-FolderStructure {
     }
 }
 
-$xml=New-FolderStructure -Path c:\ps\acl\ -Name Finance -XMLConfiguration $PSScriptRoot\Folders.xml -Verbose | ConvertTo-Xml -NoTypeInformation -Depth 3
-$xml.InnerXml | out-file c:\ps\dump.xml
+Function Compare-FolderStructure {
+	[CmdletBinding()]
+	PARAM(
+		[Parameter(Mandatory)]
+		[ValidateScript({Test-Path -Path $_})]
+		$Path,
+
+		[ValidateScript({Test-Path -Path $_})]
+		$XMLConfiguration
+    )
+
+    BEGIN {
+        # Private Function
+        Function Get-AllFolders {
+	        [CmdletBinding()]
+	        PARAM(
+		        [Parameter(Mandatory,
+                          ValueFromPipeline,
+                          ValueFromPipelineByPropertyName)]
+		        [ValidateScript({Test-Path -Path $_})]
+		        $Path,
+
+                [bool]$Recurse=$false
+            )
+
+            BEGIN { }
+
+            PROCESS {
+                #Get-ChildItem -Path -Directory -Recurse
+                $Folders += [Microsoft.Experimental.IO.LongPathDirectory]::EnumerateDirectories( $Path )
+
+                If ($Recurse) {
+                    $SubFolders = $Folders | Get-AllFolders -Recurse $Recurse
+                    If ($SubFolders) {$Folders += $SubFolders }
+                }
+            }
+
+            END {
+                $Folders
+            }
+        }
+
+        # Private Function
+        Function Compare-FolderContent {
+	        [CmdletBinding()]
+	        PARAM(
+		        [Parameter(Mandatory,
+                            ValueFromPipeline,
+                            ValueFromPipelineByPropertyName)]
+		        [ValidateScript({Test-Path -Path $_})]
+		        $Path,
+
+                [Parameter(Mandatory)]
+                $CliXML,
+                    
+                [Parameter(Mandatory)]
+                $ParentValidACL
+            )
+
+            BEGIN { 
+                
+            }
+
+            PROCESS {
+                Write-Verbose -Message "[PROCESS] Comparing Sub Folder: $Path"
+                $Acl = Get-Acl -Path $Path | Select Access, AreAccessRulesProtected
+
+                $XMLMatch = $CliXML | Where-Object { $_.Folder -eq $Path } | Select -ExpandProperty ACL
+                $CompareProperties = "Access", "AreAccessRulesProtected"
+                $InheritChanged = $false
+                #$Folders = Get-AllFolders -Path $Path
+                $Parent = $ParentValidACL
+                
+                If (-not($XMLMatch)) {
+                    Write-Verbose -Message "  [PROCESS] Using Parent ACL"
+                    $XMLMatch = $ParentValidACL
+                    If ($XMLMatch.AreAccessRulesProtected -and -not($Acl.AreAccessRulesProtected)) {
+                        Write-Verbose -Message "  [PROCESS] Parent ACL are protected, child inherits normally"
+                        $CompareProperties = "Access"
+                    }
+                    If ($XMLMatch.AreAccessRulesProtected -and $Acl.AreAccessRulesProtected) {
+                        Write-Verbose -Message "  [PROCESS] The inheritance has been changed at this level!"
+                        $InheritChanged = $true
+                    }
+                } else {
+                    $Parent = $Acl
+                    Write-Verbose -Message "  [PROCESS] Found a Match"
+                }
+
+                #Compare-Object -DifferenceObject $Acl -ReferenceObject $XMLMatch -Property Access, AreAccessRulesProtected
+                If ((Compare-Object -DifferenceObject $Acl -ReferenceObject $XMLMatch -Property $CompareProperties) -or $InheritChanged) {
+                    Write-Verbose -Message "  [PROCESS] ACL Difference found!"
+                }
+
+                $Path | Get-AllFolders | Compare-FolderContent -CliXML $CliXML -ParentValidACL $Parent
+            }
+
+            END {
+                    
+            }
+        }
+
+        # We use the experimental IO Long Path module to handle long files
+        if(!("Microsoft.Experimental.IO.LongPathDirectory" -as [type])) {
+           Add-Type -Path $PSScriptRoot\Microsoft.Experimental.IO.dll
+        }
+
+        Write-Verbose -Message "[BEGIN] Starting a compare on path: $Path from CLI XML: $XMLConfiguration"
+        $PreviousACL = Import-Clixml -Path $XMLConfiguration
+        #$PreviousACL
+    }
+
+    PROCESS {
+        Compare-FolderContent -Path $Path -CliXML $PreviousACL -ParentValidACL (Get-Acl -Path $Path | Select-Object Access, AreAccessRulesProtected)
+    }
+
+    END {
+
+    }
+}
+
+#$xml=New-FolderStructure -Path c:\ps\acl\ -Name Finance -XMLConfiguration $PSScriptRoot\Folders.xml -Verbose | ConvertTo-Xml -NoTypeInformation -Depth 3
+#$xml.InnerXml | out-file c:\ps\dump.xml
+#New-FolderStructure -Path c:\ps\acl\ -Name Finance -XMLConfiguration $PSScriptRoot\Folders.xml -Verbose | Export-Clixml c:\ps\dump.xml
+
+Compare-FolderStructure -Path C:\ps\acl\Finance -XMLConfiguration C:\ps\dump.xml -Verbose
