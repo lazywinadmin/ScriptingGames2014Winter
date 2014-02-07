@@ -8,7 +8,7 @@ Function New-FolderStructure {
 		[Parameter(Mandatory)]
 		[ValidateScript({
 			IF ($_ -match '^([a-zA-Z0-9\s\._-]+)$') {$True}
-			ELSE {Throw "$_ is either not a valid name for a directory or it is not recommended. See this MSDN article for more information: http://msdn.microsoft.com/en-us/library/windows/desktop/aa365247(v=vs.85).aspx#naming_conventions"}
+			ELSE {Throw "$_ is not a valid name for a directory"}
 		})]
 		$Name,
 
@@ -287,21 +287,21 @@ Function Compare-FolderStructure {
             )
 
             BEGIN { 
-                
+                $Output = @()
             }
 
             PROCESS {
                 Write-Verbose -Message "[PROCESS] Comparing Sub Folder: $Path"
-                $Acl = Get-Acl -Path $Path | Select Access, AreAccessRulesProtected
+                $Acl = Get-Acl -Path $Path | Select-Object Access, AreAccessRulesProtected
 
-                $XMLMatch = $CliXML | Where-Object { $_.Folder -eq $Path } | Select -ExpandProperty ACL
+                $XMLMatch = $CliXML | Where-Object { $_.Folder -eq $Path } | Select-Object -ExpandProperty ACL
                 $CompareProperties = "Access", "AreAccessRulesProtected"
                 $InheritChanged = $false
                 #$Folders = Get-AllFolders -Path $Path
                 $Parent = $ParentValidACL
                 
                 If (-not($XMLMatch)) {
-                    Write-Verbose -Message "  [PROCESS] Using Parent ACL"
+                    Write-Verbose -Message "  [PROCESS] No match, using parent ACL"
                     $XMLMatch = $ParentValidACL
                     If ($XMLMatch.AreAccessRulesProtected -and -not($Acl.AreAccessRulesProtected)) {
                         Write-Verbose -Message "  [PROCESS] Parent ACL are protected, child inherits normally"
@@ -319,13 +319,18 @@ Function Compare-FolderStructure {
                 #Compare-Object -DifferenceObject $Acl -ReferenceObject $XMLMatch -Property Access, AreAccessRulesProtected
                 If ((Compare-Object -DifferenceObject $Acl -ReferenceObject $XMLMatch -Property $CompareProperties) -or $InheritChanged) {
                     Write-Verbose -Message "  [PROCESS] ACL Difference found!"
+                    $Output += New-Object PSObject -Property @{
+                        Path = $Path
+                        CorrectACL = $XMLMatch
+                        CurrentACL = $Acl
+                    }
                 }
 
-                $Path | Get-AllFolders | Compare-FolderContent -CliXML $CliXML -ParentValidACL $Parent
+                $Output += $Path | Get-AllFolders | Compare-FolderContent -CliXML $CliXML -ParentValidACL $Parent
             }
 
             END {
-                    
+                $Output
             }
         }
 
@@ -340,11 +345,141 @@ Function Compare-FolderStructure {
     }
 
     PROCESS {
-        Compare-FolderContent -Path $Path -CliXML $PreviousACL -ParentValidACL (Get-Acl -Path $Path | Select-Object Access, AreAccessRulesProtected)
+        $Differences = Compare-FolderContent -Path $Path -CliXML $PreviousACL -ParentValidACL (Get-Acl -Path $Path | Select-Object Access, AreAccessRulesProtected)
     }
 
     END {
+        # Maybe we have some difference, maybe we don't
+        $Now = Get-Date
+        If ($Differences) {
+            $html = @"
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://
+www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+  <title>ACL Report: $($Now.ToString("yyyy-MM-dd HH:mm:ss"))</title>
+  <style type="text/css">
+body {
+    height: 100%;
+    margin: 0px;
+	background-color: #a0e1ff;
+	background-image: -ms-linear-gradient(top left, #FFFFFF 0%, #00A3EF 100%);
+	background-image: -moz-linear-gradient(top left, #FFFFFF 0%, #00A3EF 100%);
+	background-image: -o-linear-gradient(top left, #FFFFFF 0%, #00A3EF 100%);
+	background-image: -webkit-gradient(linear, left top, right bottom, color-stop(0, #FFFFFF), color-stop(1, #00A3EF));
+	background-image: -webkit-linear-gradient(top left, #FFFFFF 0%, #00A3EF 100%);
+	background-image: linear-gradient(to bottom right, #FFFFFF 0%, #00A3EF 100%);
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+	font-family:"Tahoma", "Lucida Sans Unicode", Verdana, Arial, Helvetica, sans-serif;
+	font-size:12px;
+}
+#container {
+	padding-top:50px;
+	padding-bottom:50px;
+}
 
+#core {
+	background-color: #efefef;
+	-webkit-background-size: 50px 50px;
+	-moz-background-size: 50px 50px;
+	background-size: 50px 50px;
+	-moz-box-shadow: 1px 1px 8px gray;
+	-webkit-box-shadow: 1px 1px 8px gray;
+	box-shadow: 1px 1px 8px gray;
+	box-shadow: 0 0 5px #888;
+	border: 1px solid #91938d;
+	margin: 0 auto;
+    padding-bottom: 15px;
+	width: 880px;
+}
+
+#header {
+	background-color: #2d2d2d;
+	border-bottom: 3px solid #666863;
+	height: 35px;
+	margin-bottom: 20px;
+}
+
+#title {
+	color: #ffffff;
+	font-family: Tahoma;
+	font-size: 18px;
+	line-height: 35px;
+	font-variant: small-caps;
+	font-weight: bold;
+	padding-left: 25px;
+	margin: 0 auto;
+	text-transform: uppercase;
+	vertical-align:middle;
+}
+
+#ACLContent {
+    background-color: #fff;
+    border-bottom: 1px solid #ddd;
+    border-top: 1px solid #ddd;
+    display: block;
+    margin: 0 auto;
+    padding: 10px;
+}
+
+#content_subtitle {
+	display: block;
+	margin-bottom: 10px;
+	padding-left: 14px;
+	font-size: 15px;
+}
+
+#content_legend {
+	display: block;
+	margin-bottom: 5px;
+    margin-top: 5px;
+	padding-left: 14px;
+	font-size: 14px;
+    font-weight: bold;
+}
+
+table {
+	border-collapse: collapse;
+	border: 1px solid #ddd;
+}
+
+table td {
+	padding-left: 10px;
+	padding-right: 20px;
+}
+  </style>
+</head>
+<body>
+<div id="container">
+	<div id="core">
+		<div id="header"><span id="title">ACL Report: $($Now.ToString("yyyy-MM-dd HH:mm:ss"))</span></div>
+		<span id="content_subtitle">It appears as if someone had touched our ACLs!</span>
+"@
+            $Differences | ForEach-Object {
+                $html += @"
+                <div id="ACLContent">
+                    <span id="content_legend">Path: </span>
+                    $($_.Path)
+                    <br /><br /><span id="content_legend">Correct ACL:</span>
+                    ACL Access Rules Protection: $($_.CorrectACL.AreAccessRulesProtected)<br /><br />
+"@
+                #$html += $_.CorrectACL.AreAccessRulesProtected | ConvertTo-Html -Fragment -As List
+                $html += $_.CorrectACL | Select-Object Access -ExpandProperty Access | ConvertTo-Html -Fragment -As List
+                $html += @"
+                    <br />
+                    <span id="content_legend">Current ACL:</span>
+                    ACL Access Rules Protection: $($_.CurrentACL.AreAccessRulesProtected)<br /><br />
+"@
+                $html += $_.CurrentACL | Select-Object Access -ExpandProperty Access | ConvertTo-Html -Fragment -As List
+                $html += "</div>"
+            }
+            #$Differences | Select-Object Path, CorrectACL, CurrentACL -ExpandProperty CurrentACL | Select-Object Access -ExpandProperty Access | ConvertTo-Html -Fragment | Out-File $PSScriptRoot\report.html
+            $html += "</div></div></body></html>"
+            $html | Out-File $PSScriptRoot\report.html
+        } else {
+
+        }
     }
 }
 
