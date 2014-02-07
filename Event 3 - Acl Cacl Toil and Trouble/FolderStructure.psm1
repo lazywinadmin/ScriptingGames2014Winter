@@ -1,3 +1,5 @@
+#requires -version 3.0
+
 ﻿Function New-FolderStructure
 {
 <#
@@ -160,9 +162,6 @@ Parameter: -LogPath (must contains the date)
 			#But what if you only want to set the ACL for specific files, for example all files with the .pptx extension?
 			Get-ChildItem D:\Pictures –recurse –include *.pptx –force | Set-ACL –ACLObject $NewACL
 			
-			
-			
-			
 		}#TRY Block
 		CATCH{
 			Write-Warning -Message "[PROCESS] Something went wrong !"
@@ -321,7 +320,12 @@ Validate: Format
 #>
 	[CmdletBinding()]
 	PARAM(
+		[Parameter(Mandadory)]
+		[ValidateScript({Test-Path -Path $_})]
 		$Path,
+	
+		[Parameter(Mandadory)]
+		[ValidateScript({Test-Path -Path "$_.xml"})]
 		$XMLConfiguration
 	)#PARAM
 	BEGIN
@@ -331,7 +335,13 @@ Validate: Format
 	}#BEGIN Block
 	PROCESS
 	{
-		TRY{}#TRY Block
+		TRY{
+			$Folders = Get-ChildItem -Directory -Path $Path -Recurse
+			$XML = Import-Clixml -Path $XMLConfiguration
+			Compare-Object -ReferenceObject $Folders -DifferenceObject
+			
+			
+		}#TRY Block
 		CATCH{
 			Write-Warning -Message "[PROCESS] Something went wrong !"
 			Write-Warning -Message $Error[0]	
