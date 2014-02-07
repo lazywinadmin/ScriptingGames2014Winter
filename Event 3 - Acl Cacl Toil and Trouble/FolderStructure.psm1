@@ -35,12 +35,12 @@ Parameter: -XMLConfiguration (specifies file that contains the permissions to ap
 			#Validate the XML, if not valid, ask the user to run Get-FolderStructure with XML. Or ask questions ?
 			
 			
-			IF(-not(Test-Path -Path (Join-Path -Path $Path -ChildPath $Name)){
+			IF(-not(Test-Path -Path (Join-Path -Path $Path -ChildPath $Name))) {
 				Write-Verbose -Message "[BEGIN] Create the folder $Name"
 				New-Item -Path $Path -ItemType "Directory" -Value $Name -Force
 			}
 			
-			}#TRY Block
+		}#TRY Block
 		CATCH{}#CATCH Block
 	}#BEGIN Block
 	PROCESS
@@ -85,20 +85,39 @@ Parameter: -OutputXMLConfiguration (generate xml config output of the ACL, this 
 #>
 	[CmdletBinding()]
 	PARAM(
-		$Path,
-		$OutputXMLConfiguration
+		[ValidateScript({Test-Path -Path $_})]
+		[string]$Path,
+		[switch]$OutputXMLConfiguration
 	)#PARAM
 	BEGIN
 	{
-		TRY{}#TRY Block
+		TRY{Write-Verbose -Message "[BEGIN] Starting function Get-FolderStructure"}#TRY Block
 		CATCH{}#CATCH Block
 	}#BEGIN Block
 	PROCESS
 	{
-		TRY{}#TRY Block
+		TRY{
+			Write-Verbose -Message "[PROCESS] Path: $Path"
+			IF((Get-ChildItem -Path $Path -Directory) -eq $null){Write-Verbose -Message "[PROCESS] No directories in this path"}
+			ELSE{
+				IF($PSBoundParameters['OutputXMLConfiguration'])
+				{
+					Write-Verbose -Message "[PROCESS] Exporting Directories from $Path"
+					
+					# Get the name of the parent
+					$ParentName = (Get-ChildItem -Path $Path -Directory | Select-Object -First 1).Parent.Name
+					
+					# Get the directories
+					Get-ChildItem -Path $Path -Directory -Recurse | Export-Clixml -Path (Join-Path -Path $Path -ChildPath "$ParentName-$(Get-Date -format 'yyyyMMdd_hhmmss').xml")
+					
+				}
+				ELSE{Get-ChildItem -Path $Path -Directory -Recurse}
+			}
+
+		}#TRY Block
 		CATCH{
 			Write-Warning -Message "[PROCESS] Something went wrong !"
-			Write-Warning -Message $Error[0]
+			$Error[0]
 		}#CATCH Block	
 	}#PROCESS Block
 	END
@@ -230,7 +249,7 @@ Should be able to pass info to RESTORE-FolderStructurepermission
 	}#END Block	
 }#Function Compare-FolderStructurePermission
 
-Function Report-FolderStructure
+Function Get-FolderStructureReport
 {
 <#-HTML -CSV
 Parameter: -Path
@@ -324,3 +343,11 @@ Validate: Format
 		CATCH{}#CATCH Block	
 	}#END Block
 }#Function Restore-FolderStructurePermission
+
+
+# Exporting the module members
+Export-ModuleMember -Function * -Alias *
+
+# Optional commands to create a public alias for the function
+#New-Alias -Name gs -Value Get-Something
+#Export-ModuleMember -Alias gs
