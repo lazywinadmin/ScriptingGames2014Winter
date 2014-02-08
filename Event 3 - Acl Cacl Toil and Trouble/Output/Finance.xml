@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 
+	Enumerator:: http://msdn.microsoft.com/en-us/library/system.security.accesscontrol.filesystemrights(v=vs.110).aspx 
+	Working with XML:: http://technet.microsoft.com/en-us/library/hh849968.aspx
+-->
+<Folders>
+  <Folder Label="Finance" Inherit="No">
+	<ACL Access="FullControl">FX\Domain Admins</ACL>
+	<ACL Access="Read">FX\Domain Users</ACL>
+	<ACL Access="Read">FX\Auditing</ACL>
+
+    <Folder Label="Finance Open" Inherit="Yes">
+		<ACL Access="FullControl">FX\Domain Admins</ACL>
+		<ACL Access="Read, Write">FX\Finance</ACL>
+    </Folder>
+
+    <Folder Label="RECEIPTS" Inherit="No">
+		<ACL Access="FullControl">FX\Domain Admins</ACL>
+		<ACL Access="Read">FX\Finance</ACL>
+		<ACL Access="Read">FX\Auditing</ACL>
+
+      <Folder Label="Shared" Inherit="No">
+		<ACL Access="FullControl">FX\Domain Admins</ACL>
+        <ACL Access="Read">FX\Finance</ACL>
+		<ACL Access="Read">FX\Auditing</ACL>
+        <ACL Access="Read, Write">FX\Receipts</ACL>
+      </Folder>
+
+      <Folder Label="Private" Inherit="No">
+		<ACL Access="FullControl">FX\Domain Admins</ACL>
+	  	<ACL Access="Read">FX\Auditing</ACL>
+		<ACL Access="Read, Write">FX\Receipts</ACL>
+      </Folder>
+
+      <Folder Label="Lead" Inherit="No">
+		<ACL Access="FullControl">FX\Domain Admins</ACL>
+        <ACL Access="Read, Write">FX\Receipts Lead</ACL>
+		<ACL Access="Read">FX\Auditing</ACL>
+      </Folder>
+    </Folder>
+	
+	
+    <Folder Label="PAYMENTS" Inherit="No">
+		<ACL Access="FullControl">FX\Domain Admins</ACL>
+		<ACL Access="Read">FX\Finance</ACL>
+		<ACL Access="Read">FX\Auditing</ACL>
+
+      <Folder Label="Shared" Inherit="No">
+		<ACL Access="FullControl">FX\Domain Admins</ACL>
+        <ACL Access="Read">FX\Finance</ACL>
+		<ACL Access="Read">FX\Auditing</ACL>
+        <ACL Access="Read, Write">FX\Payments</ACL>
+      </Folder>
+
+      <Folder Label="Private" Inherit="No">
+		<ACL Access="FullControl">FX\Domain Admins</ACL>
+	  	<ACL Access="Read">FX\Auditing</ACL>
+		<ACL Access="Read, Write">FX\Payments</ACL>
+      </Folder>
+
+      <Folder Label="Lead" Inherit="No">
+		<ACL Access="FullControl">FX\Domain Admins</ACL>
+        <ACL Access="Read, Write">FX\Payments Lead</ACL>
+		<ACL Access="Read">FX\Auditing</ACL>
+      </Folder>
+    </Folder>
+	
+	<Folder Label="ACCOUNTING" Inherit="No">
+		<ACL Access="FullControl">FX\Domain Admins</ACL>
+		<ACL Access="Read">FX\Finance</ACL>
+		<ACL Access="Read">FX\Auditing</ACL>
+
+      <Folder Label="Shared" Inherit="No">
+		<ACL Access="FullControl">FX\Domain Admins</ACL>
+        <ACL Access="Read">FX\Finance</ACL>
+		<ACL Access="Read">FX\Auditing</ACL>
+        <ACL Access="Read, Write">FX\Accounting</ACL>
+      </Folder>
+
+      <Folder Label="Private" Inherit="No">
+		<ACL Access="FullControl">FX\Domain Admins</ACL>
+	  	<ACL Access="Read">FX\Auditing</ACL>
+		<ACL Access="Read, Write">FX\Accounting</ACL>
+      </Folder>
+
+      <Folder Label="Lead" Inherit="No">
+		<ACL Access="FullControl">FX\Domain Admins</ACL>
+        <ACL Access="Read, Write">FX\Accounting Lead</ACL>
+		<ACL Access="Read">FX\Auditing</ACL>
+      </Folder>
+    </Folder>
+
+	<Folder Label="AUDITING" Inherit="No">
+		<ACL Access="FullControl">FX\Domain Admins</ACL>
+		<ACL Access="Read">FX\Finance</ACL>
+		<ACL Access="Read">FX\Auditing</ACL>
+
+      <Folder Label="Shared" Inherit="No">
+		<ACL Access="FullControl">FX\Domain Admins</ACL>
+        <ACL Access="Read">FX\Finance</ACL>
+        <ACL Access="Read, Write">FX\Auditing</ACL>
+      </Folder>
+
+      <Folder Label="Private" Inherit="No">
+		<ACL Access="FullControl">FX\Domain Admins</ACL>
+		<ACL Access="Read, Write">FX\Auditing</ACL>
+      </Folder>
+
+      <Folder Label="Lead" Inherit="No">
+		<ACL Access="FullControl">FX\Domain Admins</ACL>
+        <ACL Access="Read, Write">FX\Auditing Lead</ACL>
+      </Folder>
+    </Folder>
+	
+  </Folder>
+</Folders>
