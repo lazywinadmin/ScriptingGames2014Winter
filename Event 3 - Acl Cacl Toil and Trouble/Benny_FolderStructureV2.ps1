@@ -235,7 +235,9 @@ Function Compare-FolderStructure {
 		$Path,
 
 		[ValidateScript({Test-Path -Path $_})]
-		$XMLConfiguration
+		$XMLConfiguration,
+
+        [int]$Depth
     )
 
     BEGIN {
@@ -283,11 +285,14 @@ Function Compare-FolderStructure {
                 $CliXML,
                     
                 [Parameter(Mandatory)]
-                $ParentValidACL
+                $ParentValidACL,
+
+                [int]$Depth=-1
             )
 
             BEGIN { 
                 $Output = @()
+                If ($Depth -ne -1) { $Depth -= 1 }
             }
 
             PROCESS {
@@ -297,7 +302,6 @@ Function Compare-FolderStructure {
                 $XMLMatch = $CliXML | Where-Object { $_.Folder -eq $Path } | Select-Object -ExpandProperty ACL
                 $CompareProperties = "Access", "AreAccessRulesProtected"
                 $InheritChanged = $false
-                #$Folders = Get-AllFolders -Path $Path
                 $Parent = $ParentValidACL
                 
                 If (-not($XMLMatch)) {
@@ -310,6 +314,9 @@ Function Compare-FolderStructure {
                     If ($XMLMatch.AreAccessRulesProtected -and $Acl.AreAccessRulesProtected) {
                         Write-Verbose -Message "  [PROCESS] The inheritance has been changed at this level!"
                         $InheritChanged = $true
+
+                        # We update the correct ACL
+                        #$XMLMatch.AreAccessRulesProtected = $false
                     }
                 } else {
                     $Parent = $Acl
@@ -326,7 +333,9 @@ Function Compare-FolderStructure {
                     }
                 }
 
-                $Output += $Path | Get-AllFolders | Compare-FolderContent -CliXML $CliXML -ParentValidACL $Parent
+                If (($Depth -gt 0) -or ($Depth -eq -1)) {
+                    $Output += $Path | Get-AllFolders | Compare-FolderContent -CliXML $CliXML -ParentValidACL $Parent -Depth $Depth
+                }
             }
 
             END {
@@ -345,7 +354,7 @@ Function Compare-FolderStructure {
     }
 
     PROCESS {
-        $Differences = Compare-FolderContent -Path $Path -CliXML $PreviousACL -ParentValidACL (Get-Acl -Path $Path | Select-Object Access, AreAccessRulesProtected)
+        $Differences = Compare-FolderContent -Path $Path -CliXML $PreviousACL -Depth $Depth -ParentValidACL (Get-Acl -Path $Path | Select-Object Access, AreAccessRulesProtected)
     }
 
     END {
@@ -420,6 +429,7 @@ body {
     border-top: 1px solid #ddd;
     display: block;
     margin: 0 auto;
+    margin-bottom: 15px;
     padding: 10px;
 }
 
@@ -459,19 +469,19 @@ table td {
             $Differences | ForEach-Object {
                 $html += @"
                 <div id="ACLContent">
-                    <span id="content_legend">Path: </span>
+                    <span id="content_legend">Folder: </span>
                     $($_.Path)
                     <br /><br /><span id="content_legend">Correct ACL:</span>
                     ACL Access Rules Protection: $($_.CorrectACL.AreAccessRulesProtected)<br /><br />
 "@
-                #$html += $_.CorrectACL.AreAccessRulesProtected | ConvertTo-Html -Fragment -As List
-                $html += $_.CorrectACL | Select-Object Access -ExpandProperty Access | ConvertTo-Html -Fragment -As List
+                $html += $_.CorrectACL.Folder
+                $html += $_.CorrectACL.Access | ConvertTo-Html -Fragment -As List
                 $html += @"
                     <br />
                     <span id="content_legend">Current ACL:</span>
                     ACL Access Rules Protection: $($_.CurrentACL.AreAccessRulesProtected)<br /><br />
 "@
-                $html += $_.CurrentACL | Select-Object Access -ExpandProperty Access | ConvertTo-Html -Fragment -As List
+                $html += $_.CurrentACL.Access | ConvertTo-Html -Fragment -As List
                 $html += "</div>"
             }
             #$Differences | Select-Object Path, CorrectACL, CurrentACL -ExpandProperty CurrentACL | Select-Object Access -ExpandProperty Access | ConvertTo-Html -Fragment | Out-File $PSScriptRoot\report.html
@@ -487,4 +497,4 @@ table td {
 #$xml.InnerXml | out-file c:\ps\dump.xml
 #New-FolderStructure -Path c:\ps\acl\ -Name Finance -XMLConfiguration $PSScriptRoot\Folders.xml -Verbose | Export-Clixml c:\ps\dump.xml
 
-Compare-FolderStructure -Path C:\ps\acl\Finance -XMLConfiguration C:\ps\dump.xml -Verbose
+Compare-FolderStructure -Path C:\ps\acl\Finance -XMLConfiguration C:\ps\dump.xml -Depth 3 -Verbose
