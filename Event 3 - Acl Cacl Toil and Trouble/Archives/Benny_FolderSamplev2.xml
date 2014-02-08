@@ -4,30 +4,34 @@
 	Working with XML:: http://technet.microsoft.com/en-us/library/hh849968.aspx
 -->
 <Folders>
-  <Folder Label="Finance" Inherit="No" Propagate="No">
-    <ACL Access="Read">GCM2000\Domain Users</ACL>
-    <ACL Access="Read">GCM2000\Audit interne</ACL>
+  <Folder Label="Finance" Inherit="No">
+    <ACL Access="Read">BUILTIN\Power Users</ACL>
+    <ACL Access="Read">BUILTIN\Users</ACL>
+    <ACL Access="FullControl">XXX\Benny</ACL>
 	
     <Folder Label="Finance Open">
-      <ACL Access="Read">GCM2000\Domain Users</ACL>
-      <ACL Access="Read, Write">GCM2000\DOSIL</ACL>
+      <ACL Access="Read, Write">BUILTIN\Power Users</ACL>
     </Folder>
 	
     <Folder Label="RECEIPTS" Inherit="No">
-      <ACL Access="Read">GCM2000\DOSIL</ACL>
-      <ACL Access="Read, Write">GCM2000\DOSIL Site Caen</ACL>
+      <ACL Access="Read">BUILTIN\Users</ACL>
+      <ACL Access="Read, Write">BUILTIN\Power Users</ACL>
+	  <ACL Access="FullControl">XXX\Benny</ACL>
 	  
       <Folder Label="Shared" Inherit="No">
-        <ACL Access="Read">GCM2000\DOSIL</ACL>
-        <ACL Access="Read, Write">GCM2000\DOSIL Site Caen</ACL>
+        <ACL Access="Read">BUILTIN\Users</ACL>
+        <ACL Access="Read, Write">BUILTIN\Power Users</ACL>
+		<ACL Access="FullControl">XXX\Benny</ACL>
       </Folder>
 	  
       <Folder Label="Private" Inherit="No">
-        <ACL Access="Read, Write, Create, Delete">GCM2000\DOSIL Site Caen</ACL>
+        <ACL Access="Read, Write, Synchronize, Delete">BUILTIN\Power Users</ACL>
+		<ACL Access="FullControl">XXX\Benny</ACL>
       </Folder>
 	  
       <Folder Label="Lead" Inherit="No">
-        <ACL Access="Read, Write">GCM2000\DOSIL Site Le Mans</ACL>
+        <ACL Access="Read, Write">BUILTIN\Performance Log Users</ACL>
+		<ACL Access="FullControl">XXX\Benny</ACL>
       </Folder>
     </Folder>
   </Folder>
