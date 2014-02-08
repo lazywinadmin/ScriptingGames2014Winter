@@ -306,7 +306,12 @@ Function Compare-FolderStructure {
                 
                 If (-not($XMLMatch)) {
                     Write-Verbose -Message "  [PROCESS] No match, using parent ACL"
-                    $XMLMatch = $ParentValidACL
+                    
+                    # Create a new object to prevent overwritting the parent's one
+                    $XMLMatch = New-Object PSObject -Property @{
+                        Access = $ParentValidACL.Access
+                        AreAccessRulesProtected = $ParentValidACL.AreAccessRulesProtected
+                    }
                     If ($XMLMatch.AreAccessRulesProtected -and -not($Acl.AreAccessRulesProtected)) {
                         Write-Verbose -Message "  [PROCESS] Parent ACL are protected, child inherits normally"
                         $CompareProperties = "Access"
@@ -315,8 +320,8 @@ Function Compare-FolderStructure {
                         Write-Verbose -Message "  [PROCESS] The inheritance has been changed at this level!"
                         $InheritChanged = $true
 
-                        # We update the correct ACL
-                        #$XMLMatch.AreAccessRulesProtected = $false
+                        # We correct the ACL with what it should be according to the parent
+                        $XMLMatch.AreAccessRulesProtected = $false
                     }
                 } else {
                     $Parent = $Acl
