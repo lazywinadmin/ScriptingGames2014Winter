@@ -920,7 +920,7 @@ Function Restore-FolderStructure {
                     [String]$Path,
                     
                     [Parameter(Mandatory)]
-                    [String]$CliXML,
+                    $CliXML,
                         
                     $ParentValidACL,
                     [int]$Depth
