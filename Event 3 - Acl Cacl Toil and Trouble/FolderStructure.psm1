@@ -1,6 +1,6 @@
 #requires -version 3.0
 
-﻿Function New-FolderStructure
+Function New-FolderStructure
 {
 <#
 Parameter: -Path
