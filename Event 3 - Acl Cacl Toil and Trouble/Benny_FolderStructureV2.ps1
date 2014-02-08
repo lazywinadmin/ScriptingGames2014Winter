@@ -227,6 +227,36 @@ Function New-FolderStructure {
     }
 }
 
+
+Function Get-AllFolders {
+	[CmdletBinding()]
+	PARAM(
+		[Parameter(Mandatory,
+                    ValueFromPipeline,
+                    ValueFromPipelineByPropertyName)]
+		[ValidateScript({Test-Path -Path $_})]
+		$Path,
+
+        [bool]$Recurse=$false
+    )
+
+    BEGIN { }
+
+    PROCESS {
+        #Get-ChildItem -Path -Directory -Recurse
+        $Folders += [Microsoft.Experimental.IO.LongPathDirectory]::EnumerateDirectories( $Path )
+
+        If ($Recurse) {
+            $SubFolders = $Folders | Get-AllFolders -Recurse $Recurse
+            If ($SubFolders) {$Folders += $SubFolders }
+        }
+    }
+
+    END {
+        $Folders
+    }
+}
+
 Function Compare-FolderStructure {
 	[CmdletBinding()]
 	PARAM(
@@ -241,36 +271,6 @@ Function Compare-FolderStructure {
     )
 
     BEGIN {
-        # Private Function
-        Function Get-AllFolders {
-	        [CmdletBinding()]
-	        PARAM(
-		        [Parameter(Mandatory,
-                          ValueFromPipeline,
-                          ValueFromPipelineByPropertyName)]
-		        [ValidateScript({Test-Path -Path $_})]
-		        $Path,
-
-                [bool]$Recurse=$false
-            )
-
-            BEGIN { }
-
-            PROCESS {
-                #Get-ChildItem -Path -Directory -Recurse
-                $Folders += [Microsoft.Experimental.IO.LongPathDirectory]::EnumerateDirectories( $Path )
-
-                If ($Recurse) {
-                    $SubFolders = $Folders | Get-AllFolders -Recurse $Recurse
-                    If ($SubFolders) {$Folders += $SubFolders }
-                }
-            }
-
-            END {
-                $Folders
-            }
-        }
-
         # Private Function
         Function Compare-FolderContent {
 	        [CmdletBinding()]
@@ -296,7 +296,7 @@ Function Compare-FolderStructure {
             }
 
             PROCESS {
-                Write-Verbose -Message "[PROCESS] Comparing Sub Folder: $Path"
+                Write-Verbose -Message "[PROCESS] Comparing Folder: $Path"
                 $Acl = Get-Acl -Path $Path | Select-Object Access, AreAccessRulesProtected
 
                 $XMLMatch = $CliXML | Where-Object { $_.Folder -eq $Path } | Select-Object -ExpandProperty ACL
@@ -315,6 +315,9 @@ Function Compare-FolderStructure {
                     If ($XMLMatch.AreAccessRulesProtected -and -not($Acl.AreAccessRulesProtected)) {
                         Write-Verbose -Message "  [PROCESS] Parent ACL are protected, child inherits normally"
                         $CompareProperties = "Access"
+
+                        # We correct the ACL with what it should be according to the parent
+                        $XMLMatch.AreAccessRulesProtected = $false
                     }
                     If ($XMLMatch.AreAccessRulesProtected -and $Acl.AreAccessRulesProtected) {
                         Write-Verbose -Message "  [PROCESS] The inheritance has been changed at this level!"
@@ -348,10 +351,7 @@ Function Compare-FolderStructure {
             }
         }
 
-        # We use the experimental IO Long Path module to handle long files
-        if(!("Microsoft.Experimental.IO.LongPathDirectory" -as [type])) {
-           Add-Type -Path $PSScriptRoot\Microsoft.Experimental.IO.dll
-        }
+
 
         Write-Verbose -Message "[BEGIN] Starting a compare on path: $Path from CLI XML: $XMLConfiguration"
         $PreviousACL = Import-Clixml -Path $XMLConfiguration
@@ -434,7 +434,7 @@ body {
     border-top: 1px solid #ddd;
     display: block;
     margin: 0 auto;
-    margin-bottom: 15px;
+    margin-bottom: 25px;
     padding: 10px;
 }
 
@@ -498,8 +498,145 @@ table td {
     }
 }
 
+Function Remediate-FolderStructure {
+	[CmdletBinding()]
+	PARAM(
+		[Parameter(Mandatory)]
+		[ValidateScript({Test-Path -Path $_})]
+		$Path,
+
+		[ValidateScript({Test-Path -Path $_})]
+		$XMLConfiguration,
+
+        [int]$Depth=-1
+    )
+
+    BEGIN {
+        # Private Function
+        Function Remediate-FolderContent {
+	        [CmdletBinding()]
+	        PARAM(
+		        [Parameter(Mandatory,
+                            ValueFromPipeline,
+                            ValueFromPipelineByPropertyName)]
+		        [ValidateScript({Test-Path -Path $_})]
+		        $Path,
+
+                [Parameter(Mandatory)]
+                $CliXML,
+                    
+                [Parameter(Mandatory)]
+                $ParentValidACL,
+
+                [int]$Depth
+            )
+
+            BEGIN { 
+                $Output = @()
+                If ($Depth -ne -1) { $Depth -= 1 }
+            }
+
+            PROCESS {
+                Write-Verbose -Message "[PROCESS] Analysing Folder: $Path"
+                $Acl = Get-Acl -Path $Path | Select-Object Access, AreAccessRulesProtected
+
+                $XMLMatch = $CliXML | Where-Object { $_.Folder -eq $Path } | Select-Object -ExpandProperty ACL
+                $CompareProperties = "Access", "AreAccessRulesProtected"
+                $InheritChanged = $false
+                $Parent = $ParentValidACL
+                $UseParent = $false
+                
+                If (-not($XMLMatch)) {
+                    Write-Verbose -Message "  [PROCESS] No match, using parent ACL"
+                    $UseParent = $true
+
+                    # Create a new object to prevent overwritting the parent's one
+                    $XMLMatch = New-Object PSObject -Property @{
+                        Access = $ParentValidACL.Access
+                        AreAccessRulesProtected = $ParentValidACL.AreAccessRulesProtected
+                    }
+                    If ($XMLMatch.AreAccessRulesProtected -and -not($Acl.AreAccessRulesProtected)) {
+                        Write-Verbose -Message "  [PROCESS] Parent ACL are protected, child inherits normally"
+                        $CompareProperties = "Access"
+
+                        # We correct the ACL with what it should be according to the parent
+                        $XMLMatch.AreAccessRulesProtected = $false
+                    }
+                    If ($XMLMatch.AreAccessRulesProtected -and $Acl.AreAccessRulesProtected) {
+                        Write-Verbose -Message "  [PROCESS] The inheritance has been changed at this level!"
+                        $InheritChanged = $true
+
+                        # We correct the ACL with what it should be according to the parent
+                        $XMLMatch.AreAccessRulesProtected = $false
+                    }
+                } else {
+                    $Parent = $Acl
+                    Write-Verbose -Message "  [PROCESS] Found a Match"
+                }
+
+                #Compare-Object -DifferenceObject $Acl -ReferenceObject $XMLMatch -Property Access, AreAccessRulesProtected
+                If ((Compare-Object -DifferenceObject $Acl -ReferenceObject $XMLMatch -Property $CompareProperties) -or $InheritChanged) {
+                    Write-Verbose -Message "  [PROCESS] ACL Difference found!"
+                    
+                    $RemediateAcl = Get-Acl -Path $Path
+
+                    # Determine what differs and fix it
+                    If (Compare-Object -DifferenceObject $Acl.AreAccessRulesProtected -ReferenceObject $XMLMatch.AreAccessRulesProtected) {
+                        Write-Verbose -Message "    [PROCESS] Proceeding to Access Rules Protection remediation"
+                        
+                        $RemediateAcl.SetAccessRuleProtection($XMLMatch.AreAccessRulesProtected, $false)
+                    }
+
+                    If (Compare-Object -DifferenceObject $Acl.Access -ReferenceObject $XMLMatch.Access) {
+                        Write-Verbose -Message "    [PROCESS] Proceeding to Security Access remediation"
+
+                        # Simply remove what doesn't belong here
+                        $Remediation = $RemediateAcl.Access | Where-Object { -not $_.IsInherited } | ForEach-Object { $RemediateAcl.RemoveAccessRule($_) }
+                        If (-not $UseParent) {
+                            # We recompose the potential deserialized ACLs
+                            $Remediation = $XMLMatch.Access | Where-Object { -not $_.IsInherited } | ForEach-Object { 
+                                $Rule = New-Object -TypeName 'System.Security.AccessControl.FileSystemAccessRule' -ArgumentList $_.IdentityReference.ToString(), $_.FileSystemRights, $_.InheritanceFlags, $_.PropagationFlags, $_.AccessControlType
+                                $RemediateAcl.AddAccessRule($Rule)
+                            }
+                        }
+                    }
+
+                    $Output += $Path
+                    Set-Acl -Path $Path -AclObject $RemediateAcl
+                }
+
+                If (($Depth -gt 0) -or ($Depth -eq -1)) {
+                    $Output += $Path | Get-AllFolders | Remediate-FolderContent -CliXML $CliXML -ParentValidACL $Parent -Depth $Depth
+                }
+            }
+
+            END {
+                $Output
+            }
+        }
+
+        Write-Verbose -Message "[BEGIN] Starting a remediation on path: $Path from CLI XML: $XMLConfiguration"
+        $PreviousACL = Import-Clixml -Path $XMLConfiguration
+    }
+
+    PROCESS {
+        Remediate-FolderContent -Path $Path -CliXML $PreviousACL -Depth $Depth -ParentValidACL (Get-Acl -Path $Path | Select-Object Access, AreAccessRulesProtected)
+    }
+
+    END {
+        
+    }
+}
+
+# We use the experimental IO Long Path module to handle long files
+if(!("Microsoft.Experimental.IO.LongPathDirectory" -as [type])) {
+    Add-Type -Path $PSScriptRoot\Microsoft.Experimental.IO.dll
+}
+
 #$xml=New-FolderStructure -Path c:\ps\acl\ -Name Finance -XMLConfiguration $PSScriptRoot\Folders.xml -Verbose | ConvertTo-Xml -NoTypeInformation -Depth 3
 #$xml.InnerXml | out-file c:\ps\dump.xml
 #New-FolderStructure -Path c:\ps\acl\ -Name Finance -XMLConfiguration $PSScriptRoot\Folders.xml -Verbose | Export-Clixml c:\ps\dump.xml
 
-Compare-FolderStructure -Path C:\ps\acl\Finance -XMLConfiguration C:\ps\dump.xml -Depth 3 -Verbose
+#Compare-FolderStructure -Path C:\ps\acl\Finance -XMLConfiguration C:\ps\dump.xml -Depth 3 -Verbose
+
+Remediate-FolderStructure -Path C:\ps\acl\Finance -XMLConfiguration C:\ps\dump.xml -Depth 4 -Verbose
