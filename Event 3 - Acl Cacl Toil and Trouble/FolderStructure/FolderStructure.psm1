@@ -1054,17 +1054,3 @@ Function Restore-FolderStructure {
 
 # Exporting the module members
 Export-ModuleMember -Function * -Alias *
-
-
-# Exporting the module members
-#Export-ModuleMember -Function * -Alias *
-# Optional commands to create a public alias for the function
-#New-Alias -Name gs -Value Get-Something
-#Export-ModuleMember -Alias gs
-#$xml=New-FolderStructure -Path c:\ps\acl\ -Name Finance -XMLConfiguration $PSScriptRoot\Folders.xml -Verbose | ConvertTo-Xml -NoTypeInformation -Depth 3
-#$xml.InnerXml | out-file c:\ps\dump.xml
-#New-FolderStructure -Path c:\ps\acl\ -Name Finance -XMLConfiguration $PSScriptRoot\Folders.xml -Verbose | Export-Clixml c:\ps\dump.xml
-#Compare-FolderStructure -Path C:\ps\acl\Finance -XMLConfiguration C:\ps\dump.xml -Depth 3 -Verbose
-#Restore-FolderStructure -Path C:\ps\acl\Finance -XMLConfiguration C:\ps\dump.xml -Depth 4 -Verbose
-
-#Restore-FolderStructure -Path C:\ps\Finance -XMLConfiguration C:\ps\dump.xml
